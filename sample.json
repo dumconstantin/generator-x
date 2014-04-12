@@ -1,0 +1,357 @@
+{
+    "version": "1.0.0",
+    "timeStamp": 1397325419.364,
+    "id": 1138,
+    "file": "/Users/constantin/Desktop/generatorx.psd",
+    "bounds": {
+        "top": 0,
+        "left": 0,
+        "bottom": 900,
+        "right": 900
+    },
+    "selection": [
+        9
+    ],
+    "resolution": 72,
+    "globalLight": {
+        "angle": 120,
+        "altitude": 30
+    },
+    "generatorSettings": false,
+    "layers": [
+        {
+            "id": 60,
+            "index": 9,
+            "type": "layerSection",
+            "name": "Group 2",
+            "bounds": {
+                "top": 32,
+                "left": 155,
+                "bottom": 72,
+                "right": 282
+            },
+            "visible": true,
+            "clipped": false,
+            "blendOptions": {
+                "mode": "passThrough"
+            },
+            "mask": {
+                "removed": true
+            },
+            "generatorSettings": false,
+            "layers": [
+                {
+                    "id": 59,
+                    "index": 8,
+                    "type": "shapeLayer",
+                    "name": "Rectangle 2",
+                    "bounds": {
+                        "top": 32,
+                        "left": 198.65625,
+                        "bottom": 72,
+                        "right": 238.34375
+                    },
+                    "visible": true,
+                    "clipped": false,
+                    "fill": {
+                        "color": {
+                            "red": 145.617382,
+                            "green": 38.685375,
+                            "blue": 143.23488
+                        },
+                        "class": "solidColorLayer"
+                    },
+                    "mask": {
+                        "removed": true
+                    },
+                    "generatorSettings": false,
+                    "path": {
+                        "pathComponents": [
+                            {
+                                "origin": {
+                                    "type": "rect",
+                                    "bounds": {
+                                        "top": 32,
+                                        "left": 198.65625,
+                                        "bottom": 72,
+                                        "right": 238.34375
+                                    }
+                                }
+                            }
+                        ],
+                        "bounds": {
+                            "top": 32,
+                            "left": 198.65625,
+                            "bottom": 72,
+                            "right": 238.34375
+                        },
+                        "defaultFill": false
+                    }
+                },
+                {
+                    "id": 58,
+                    "index": 7,
+                    "type": "shapeLayer",
+                    "name": "Rectangle 3",
+                    "bounds": {
+                        "top": 32,
+                        "left": 242.3125,
+                        "bottom": 72,
+                        "right": 282
+                    },
+                    "visible": true,
+                    "clipped": false,
+                    "fill": {
+                        "color": {
+                            "red": 236.156401,
+                            "green": 0,
+                            "blue": 139.853593
+                        },
+                        "class": "solidColorLayer"
+                    },
+                    "mask": {
+                        "removed": true
+                    },
+                    "generatorSettings": false,
+                    "path": {
+                        "pathComponents": [
+                            {
+                                "origin": {
+                                    "type": "rect",
+                                    "bounds": {
+                                        "top": 32,
+                                        "left": 242.3125,
+                                        "bottom": 72,
+                                        "right": 282
+                                    }
+                                }
+                            }
+                        ],
+                        "bounds": {
+                            "top": 32,
+                            "left": 242.3125,
+                            "bottom": 72,
+                            "right": 282
+                        },
+                        "defaultFill": false
+                    }
+                },
+                {
+                    "id": 57,
+                    "index": 6,
+                    "type": "shapeLayer",
+                    "name": "Rectangle 1",
+                    "bounds": {
+                        "top": 32,
+                        "left": 155,
+                        "bottom": 72,
+                        "right": 194.6875
+                    },
+                    "visible": true,
+                    "clipped": false,
+                    "fill": {
+                        "color": {
+                            "red": 240.369949,
+                            "green": 110.235239,
+                            "blue": 169.619737
+                        },
+                        "class": "solidColorLayer"
+                    },
+                    "mask": {
+                        "removed": true
+                    },
+                    "generatorSettings": false,
+                    "path": {
+                        "pathComponents": [
+                            {
+                                "origin": {
+                                    "type": "rect",
+                                    "bounds": {
+                                        "top": 32,
+                                        "left": 155,
+                                        "bottom": 72,
+                                        "right": 194.6875
+                                    }
+                                }
+                            }
+                        ],
+                        "bounds": {
+                            "top": 32,
+                            "left": 155,
+                            "bottom": 72,
+                            "right": 194.6875
+                        },
+                        "defaultFill": false
+                    }
+                }
+            ]
+        },
+        {
+            "id": 31,
+            "index": 4,
+            "type": "layerSection",
+            "name": "Group 1",
+            "bounds": {
+                "top": 32,
+                "left": 24,
+                "bottom": 72,
+                "right": 151
+            },
+            "visible": true,
+            "clipped": false,
+            "blendOptions": {
+                "mode": "passThrough"
+            },
+            "mask": {
+                "removed": true
+            },
+            "generatorSettings": false,
+            "layers": [
+                {
+                    "id": 29,
+                    "index": 3,
+                    "type": "shapeLayer",
+                    "name": "Rectangle 2",
+                    "bounds": {
+                        "top": 32,
+                        "left": 67.65625,
+                        "bottom": 72,
+                        "right": 107.34375
+                    },
+                    "visible": true,
+                    "clipped": false,
+                    "fill": {
+                        "color": {
+                            "red": 0,
+                            "green": 0,
+                            "blue": 0
+                        },
+                        "class": "solidColorLayer"
+                    },
+                    "mask": {
+                        "removed": true
+                    },
+                    "generatorSettings": false,
+                    "path": {
+                        "pathComponents": [
+                            {
+                                "origin": {
+                                    "type": "rect",
+                                    "bounds": {
+                                        "top": 32,
+                                        "left": 67.65625,
+                                        "bottom": 72,
+                                        "right": 107.34375
+                                    }
+                                }
+                            }
+                        ],
+                        "bounds": {
+                            "top": 32,
+                            "left": 67.65625,
+                            "bottom": 72,
+                            "right": 107.34375
+                        },
+                        "defaultFill": false
+                    }
+                },
+                {
+                    "id": 30,
+                    "index": 2,
+                    "type": "shapeLayer",
+                    "name": "Rectangle 3",
+                    "bounds": {
+                        "top": 32,
+                        "left": 111.3125,
+                        "bottom": 72,
+                        "right": 151
+                    },
+                    "visible": true,
+                    "clipped": false,
+                    "fill": {
+                        "color": {
+                            "red": 0,
+                            "green": 0,
+                            "blue": 0
+                        },
+                        "class": "solidColorLayer"
+                    },
+                    "mask": {
+                        "removed": true
+                    },
+                    "generatorSettings": false,
+                    "path": {
+                        "pathComponents": [
+                            {
+                                "origin": {
+                                    "type": "rect",
+                                    "bounds": {
+                                        "top": 32,
+                                        "left": 111.3125,
+                                        "bottom": 72,
+                                        "right": 151
+                                    }
+                                }
+                            }
+                        ],
+                        "bounds": {
+                            "top": 32,
+                            "left": 111.3125,
+                            "bottom": 72,
+                            "right": 151
+                        },
+                        "defaultFill": false
+                    }
+                },
+                {
+                    "id": 28,
+                    "index": 1,
+                    "type": "shapeLayer",
+                    "name": "Rectangle 1",
+                    "bounds": {
+                        "top": 32,
+                        "left": 24,
+                        "bottom": 72,
+                        "right": 63.6875
+                    },
+                    "visible": true,
+                    "clipped": false,
+                    "fill": {
+                        "color": {
+                            "red": 0,
+                            "green": 0,
+                            "blue": 0
+                        },
+                        "class": "solidColorLayer"
+                    },
+                    "mask": {
+                        "removed": true
+                    },
+                    "generatorSettings": false,
+                    "path": {
+                        "pathComponents": [
+                            {
+                                "origin": {
+                                    "type": "rect",
+                                    "bounds": {
+                                        "top": 32,
+                                        "left": 24,
+                                        "bottom": 72,
+                                        "right": 63.6875
+                                    }
+                                }
+                            }
+                        ],
+                        "bounds": {
+                            "top": 32,
+                            "left": 24,
+                            "bottom": 72,
+                            "right": 63.6875
+                        },
+                        "defaultFill": false
+                    }
+                }
+            ]
+        }
+    ]
+}
