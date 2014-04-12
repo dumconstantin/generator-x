@@ -6,6 +6,10 @@ var psd = require('./sample.json'),
     html = '',
     structure = {};
 
+// TODO: For layers that have the same name regardless of their position
+// in the structure tree, allocate different cssNames to avoid id collision
+
+
 function createStructure(sections, parent) {
 
     // Is the first call from the root?
@@ -33,7 +37,7 @@ function createStructure(sections, parent) {
 
         layer.properties = {
             css: {},
-            parsedCSS: {},
+            parsedCSS: { },
             cssName: layer.name.replace(/\s/g, '-')
         };
 
@@ -51,13 +55,13 @@ function createStructure(sections, parent) {
                 });
 
                 section = {
+                    id: layer.properties.id,
                     properties: layer.properties,
                     sections: [],
                     layers: []
                 };
 
                 parent.sections.push(section);
-
                 if (undefined !== layer.layers) {
                     createStructure(layer.layers, section);
                 } else {
@@ -82,6 +86,29 @@ function createStructure(sections, parent) {
     return parent;
 }
 
+
+function setBoundries(style, layer, bounds) {
+    style.top = Math.round(bounds.top);
+    if (undefined !== layer.properties.parent.properties.parsedCSS.top) {
+        style.top -= layer.properties.parent.properties.parsedCSS.top;
+    }
+
+    style.left = Math.round(bounds.left);
+    if (undefined !== layer.properties.parent.properties.parsedCSS.left) {
+        style.left -= layer.properties.parent.properties.parsedCSS.left;
+    }
+
+    style.bottom = Math.round(bounds.bottom);
+    if (undefined !== layer.properties.parent.properties.parsedCSS.top) {
+        style.bottom -= layer.properties.parent.properties.parsedCSS.top;
+    } 
+
+    style.right = Math.round(bounds.right);
+    if (undefined !== layer.properties.parent.properties.parsedCSS.left) {
+        style.right -= layer.properties.parent.properties.parsedCSS.left;
+    }
+}
+
 function parseLayerStyles(layer) {
     var style = {};
 
@@ -91,6 +118,8 @@ function parseLayerStyles(layer) {
             style.color = 'rgb(' + Math.round(temp.color.red) + ', ' 
                 + Math.round(temp.color.green) + ', ' + Math.round(temp.color.blue) + ')';
             
+            setBoundries(style, layer, layer.bounds);
+
             style['font-family'] = temp.fontName;
             style['font-size'] = temp.size + 'px';
 
@@ -105,10 +134,7 @@ function parseLayerStyles(layer) {
                 + Math.round(layer.fill.color.green) 
                 + ', ' + Math.round(layer.fill.color.blue) + ')';
 
-            style.top = Math.round(layer.path.bounds.top) - layer.properties.parent.properties.parsedCSS.top;
-            style.left = Math.round(layer.path.bounds.left) - layer.properties.parent.properties.parsedCSS.left;
-            style.bottom = Math.round(layer.path.bounds.bottom) - layer.properties.parent.properties.parsedCSS.top;
-            style.right = Math.round(layer.path.bounds.right) - layer.properties.parent.properties.parsedCSS.left;
+            setBoundries(style, layer, layer.path.bounds);
 
             style['z-index'] = layer.index;
             style.width = (style.right - style.left) + 'px';
@@ -125,23 +151,20 @@ function parseLayerStyles(layer) {
 }
 
 function parseSectionStyles(section) {
-    var style = {},
-        properties = section.properties.parsedCSS;
+    var style = section.properties.parsedCSS;
 
     if (undefined !== section.properties.bounds) {
-        
-        Object.keys(section.properties.bounds).forEach(function (boundry) {
-            properties[boundry] = Math.round(section.properties.bounds[boundry]);
-            style[boundry] = 
-                (properties[boundry] - section.properties.parent.properties.parsedCSS[boundry]) + 'px';
-        });
-        
-        style.position = 'absolute';
+
+        setBoundries(style, section, section.properties.bounds);
+
+        style.width = (style.right - style.left) + 'px';
+        style.height = (style.bottom - style.top) + 'px';
+
         style['z-index'] = section.properties.index;
 
     }
 
-    section.properties.parsedCSS = properties;
+    section.properties.parsedCSS = style;
 
     return style;
 }
@@ -214,26 +237,7 @@ function parseStyles(section) {
     });
 }
 
-function testFloat(layer) {
-    var lefts = [],
-        tempLayer = layer;
-
-    console.log("Testing " + layer.properties.cssName);
-    function get(direction) {
-        while(tempLayer.properties[direction]) {
-            lefts.push(tempLayer.properties[direction].properties.parsedCSS.left);
-            tempLayer = tempLayer.properties[direction];
-        }
-    }
-
-    get('prev');
-    // get('next');
-
-    console.log(lefts);
-}
-
-
-function findFloatables(layers) {
+function findFloatables(layers, type) {
     var flotables = [],
         firstElementsInRow = [],
         disposeFloatables = false,
@@ -271,8 +275,10 @@ function findFloatables(layers) {
                 (flotables[0].properties.parsedCSS.left +
                 parseInt(flotables[0].properties.parsedCSS.width));
 
+        console.log("MarginColumn: " + marginColumn);
         // The first element of each row must not have margins
         firstElementsInRow.push(flotables[0].id);
+        console.log(firstElementsInRow);
 
         // Find the margin between other layers
         flotables = flotables.filter(function (layer, index) {
@@ -286,9 +292,8 @@ function findFloatables(layers) {
             }
 
             if (undefined !== prev) {
-
                 // If floated cantidate is on a different row.
-                if (prev.properties.parsedCSS.top != layer.properties.parsedCSS.top) {
+                if (prev.properties.parsedCSS.top !== layer.properties.parsedCSS.top) {
                     firstElementsInRow.push(layer.id);
 
                     // Calculate the bottom margin of the above row
@@ -304,6 +309,8 @@ function findFloatables(layers) {
                     (prev.properties.parsedCSS.left +
                     parseInt(prev.properties.parsedCSS.width));
 
+                console.log(layer.properties.parsedCSS.left + " vs " + prev.properties.parsedCSS.left + " vs " + prev.properties.parsedCSS.width);
+                console.log("Value: " + value);
                 if (value === marginColumn) {
                     return true;
                 } else {
@@ -315,7 +322,7 @@ function findFloatables(layers) {
             }
         });
 
-        console.log(flotables.length + ' floatable elements.');
+        console.log('Found ' + flotables.length + ' ' + type + ' floatable elements.');
     }
 
     return {
@@ -335,29 +342,49 @@ function findFloatables(layers) {
 // - 
 
 function processCSS(section) {
-    var floatableLayers = {},
-        floatableSections = {};
-
-    section.properties.css.position = 'absolute'; 
-    section.properties.css.left = section.properties.parsedCSS.left + 'px';
-    section.properties.css.top = section.properties.parsedCSS.top + 'px';
-    section.properties.css.width = section.properties.parsedCSS.right - section.properties.parsedCSS.left + "px";
+    var floatableLayers,
+        floatableSections;
 
     // Find floatable sections
-    // floatableSections = findFloatables(section.sections);
-    // console.log(floatableSections);
+    if (section.sections.length > 1) {
+        console.log("Sending sections");
+        floatableSections = findFloatables(section.sections, 'sections');
+    }
 
-    console.log()
+    console.log(floatableSections);
+
     section.sections.forEach(function (childSection) {
+        if (undefined !== floatableSections && floatableSections.elements.some(function (floated) {
+            if (floated.id === childSection.id) {
+                return true;
+            } else {
+                return false;
+            }
+        })) {
+
+            childSection.properties.css.float = 'left';
+            if (-1 === floatableSections.firstElementsInRow.indexOf(childSection.id)) {
+                console.log("Setting margin column");
+                childSection.properties.css['margin-left'] = floatableSections.marginColumn + 'px';
+            }
+            childSection.properties.css['margin-bottom'] = floatableSections.marginRow + 'px';
+        } else {
+            childSection.properties.css.position = 'absolute';
+
+            childSection.properties.css.left = childSection.properties.parsedCSS.left + 'px';
+            childSection.properties.css.top = childSection.properties.parsedCSS.top + 'px';
+            childSection.properties.css.width = childSection.properties.parsedCSS.right - childSection.properties.parsedCSS.left + "px";
+        }
+        
         processCSS(childSection);
     });
 
-    // floatableLayers = findFloatables(section.layers);
+    floatableLayers = findFloatables(section.layers, 'layers');
 
     section.layers.forEach(function (layer) {
 
         // Decide if the element requires floating.
-        if (floatableLayers.elements.some(function (floated) {
+        if (undefined !== floatableLayers && floatableLayers.elements.some(function (floated) {
             if (floated.id === layer.id) {
                 return true;
             } else {
@@ -368,6 +395,7 @@ function processCSS(section) {
 
             // If the layer is the first layer then the margin shouldn't be 
             // the same as with the rest of the layers.
+            // console.log('For ' + section.properties.cssName + ' vs ' + layer.properties.cssName + ' ' + JSON.stringify(floatableLayers.firstElementsInRow));
             if (-1 === floatableLayers.firstElementsInRow.indexOf(layer.id)) {
                 layer.properties.css['margin-left'] = floatableLayers.marginColumn + 'px';
             }
