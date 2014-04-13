@@ -6,34 +6,6 @@ var psd = require('./sample.json'),
     html = '',
     structure = {};
 
-
-
-/**
- * Has method
- * Will provide a response for a chain of Object properties
- * e.g: x.has('one.of.these.properties');
- */
-Object.defineProperty(Object.prototype, 'has', {
-    enumerable : false,
-    value : function(params) {
-        var tester;
-        if ('function' !== typeof params && 'string' === typeof params) {
-            try {
-                eval('tester = this.' + params);
-                // This eval is not evil , as long is completely secured
-                if (undefined === tester) {
-                    throw new Error('not available');
-                }
-            } catch (e) {
-                return false;
-            }
-        } else {
-            return false;
-        }
-        return true;
-    }
-});
-
 /**
  * getValueOf
  * Retrieves the value of a chained Object properties
@@ -62,129 +34,6 @@ Object.defineProperty(Object.prototype, '_get', {
     }
 });
 
-/**
- * unsetValueOf
- * Removes a reference from a given object
- */
-
-Object.defineProperty(Object.prototype, 'unsetValueOf', {
-    enumerable : false,
-    value : function(params) {
-        var value;
-
-        if ('function' !== typeof params && 'string' === typeof params) {
-            try {
-                eval('delete this.' + params);
-            } catch (e) {
-                return undefined;
-            }
-        } else {
-            return false;
-        }
-        return value;
-    }
-});
-
-/**
- * setValueOf
- * Creates the desired structure and assigns a desired value to it
- */
-Object.defineProperty(Object.prototype, 'setValueOf', {
-    enumerable : false,
-    value : function(params, value, recall) {
-        var tree, i, chain, isValid = true, setValue, placebo, tempTree, finalVar;
-
-        if (true === this instanceof String) {
-            return false;
-        }
-
-        if (true === this instanceof Number) {
-            return false;
-        }
-
-        if (true === this instanceof Boolean) {
-            return false;
-        }
-
-        if (true === this instanceof Function) {
-            return false;
-        }
-
-        if (true === this instanceof Array) {
-            return false;
-        }
-
-        if ('object' !== typeof this) {
-            return false;
-        }
-
-        if ('number' === typeof this) {
-            return false;
-        }
-
-        setValue = function() {
-            try {
-                if (/\./.test(params)) {
-                    tempTree = params.split('.');
-                    finalVar = tempTree.pop();
-                    eval('placebo = this.' + tempTree.join('.'));
-                    if (undefined !== placebo) {
-                        placebo[finalVar] = value;
-                    }
-                } else {
-                    this[params] = value;
-                }
-            } catch (e) {
-                console.error('Object prototype setValueOf has failed');
-                console.error(e);
-                return false;
-            }
-        };
-
-        if ('function' !== typeof params && 'string' === typeof params) {
-            if (/\./.test(params)) {
-
-                //Get the property tree
-                tree = params.split('.');
-
-                if (0 < tree.length) {
-                    chain = '';
-
-                    for ( i = 0; i < Math.round(tree.length - 1); i += 1) {
-                        chain += tree[i];
-                        if (false === this.has(chain)) {
-                            isValid = false;
-                            this.setValueOf(chain, {}, true);
-                        }
-                        if (i !== tree.length - 1) {
-                            chain += ".";
-                        }
-
-                    }
-
-                    chain += tree[tree.length - 1];
-
-                    if (false === isValid) {
-                        this.setValueOf(chain, value, true);
-                        return;
-                    } else {
-                        if (false === this.has(params)) {
-                            setValue.call(this);
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            if (false === this.has(params)) {
-                setValue.call(this);
-            }
-        }
-        return true;
-    }
-});
-
-
 // All sections are still layers.
 // The semantic is given by the way the interaction with the dom will occur
 // A layer must have: 
@@ -211,40 +60,48 @@ Object.defineProperty(Object.prototype, 'setValueOf', {
 
 function parseCSS(style) {
     var css = {
-        top: style._get('bounds.top', 0),
-        right: style._get('bounds.right', 0),
-        bottom: style._get('bounds.bottom', 0),
-        left: style._get('bounds.left', 0),
-        position: 'static',
-        background: {
-            color: {
-                red: style._get('fill.color.red', null),
-                green: style._get('fill.color.green', null),
-                blue: style._get('fill.color.blue', null)
+            top: style._get('bounds.top', 0),
+            right: style._get('bounds.right', 0),
+            bottom: style._get('bounds.bottom', 0),
+            left: style._get('bounds.left', 0),
+            position: 'static',
+            background: {
+                color: {
+                    red: style._get('fill.color.red', null),
+                    green: style._get('fill.color.green', null),
+                    blue: style._get('fill.color.blue', null)
+                },
+                gradient: {
+                    colors: [],
+                    locations: [],
+                    reverse: false,
+                    type: 'linear',
+                    opacity: 100
+                }
             },
-            gradient: {
-                colors: [],
-                locations: [],
-                reverse: null
-            }
-        },
-        opacity: style._get('blendOptions.opacity.value', 0) / 100,
-        border: {
-            color: {
-                red: style._get('layerEffects.frameFX.color.red', null),
-                green: style._get('layerEffects.frameFX.color.green', null),
-                blue: style._get('layerEffects.frameFX.color.blue', null)
+            opacity: style._get('blendOptions.opacity.value', 0) / 100,
+            border: {
+                color: {
+                    red: style._get('layerEffects.frameFX.color.red', null),
+                    green: style._get('layerEffects.frameFX.color.green', null),
+                    blue: style._get('layerEffects.frameFX.color.blue', null)
+                },
+                size: 0,
+                radius: {
+                    topLeft: 0,
+                    topRight: 0,
+                    bottomLeft: 0,
+                    bottomRight: 0
+                }
             },
-            size: 0,
-            radius: {
-                topLeft: 0,
-                topRight: 0,
-                bottomLeft: 0,
-                bottomRight: 0
-            }
+            zIndex: style.index,
+            color: {},
+            fontSize: 16
         },
-        zIndex: style.index
-    };
+        textColor;
+
+    // -----------------
+    // Background styles
 
     // Fill color overwritted by the blend options
     css.background.color = {
@@ -252,6 +109,19 @@ function parseCSS(style) {
         green: style._get('layerEffects.solidFill.color.green', css.background.color.green),
         blue: style._get('layerEffects.solidFill.color.blue', css.background.color.blue)
     };
+   
+    // Background reverse (true | false)
+    css.background.gradient.reverse = style._get('layerEffects.gradientFill.reverse', false);
+
+    // Background type (linear, radial, angle)
+    css.background.type = style._get('layerEffects.gradientFill.type', 'linear');
+
+    // TODO: Implement Radial Gradient
+    
+    // TODO: Implement Angle Gradient
+
+    // Gradient opacity
+    css.background.gradient.opacity = style._get('layerEffects.gradientFill.opacity.value', 100);
 
     // Gradient Colors
     style._get('layerEffects.gradientFill.gradient.colors', []).forEach(function (color) {
@@ -269,9 +139,24 @@ function parseCSS(style) {
     // The color array is in reverse order due to the way is added
     css.background.gradient.colors.reverse();
 
-    css.background.gradient.reverse = style._get('layerEffects.gradientFill.reverse', false);
+    // TODO: Implement border
 
-    // Overwrite positioning for now
+    // TODO: Implement border radius
+
+    // TODO: Implement drop shadow/inner glow
+
+    // TODO: Implement inner shadow/inner glow
+
+    // ---------
+    // Text styles
+    css.color = style._get('text.textStyleRange[0].textStyle.color', {});
+
+    css.fontSize = style._get('text.textStyleRange[0].textStyle.size', 16);
+    // For some reason font size comes in a different format that is 
+    // roughly twice the initial px value
+    css.fontSize = (css.fontSize / 2) - ((css.fontSize * 10) / 100);
+
+    // [TEMP] Overwrite positioning for now
     css.position = 'absolute';
 
     css.width = css.right - css.left;
@@ -298,6 +183,7 @@ function Layer(layer) {
     this.cssName = layer.name.replace(/\s/g, '-') + '-' + getUnique();
     this.index = layer.index;
     this.text = '';
+    this.type = layer.type;
 
     // Presumed css styles
     this.css = parseCSS(layer);
@@ -383,16 +269,17 @@ Layer.prototype.getCSSProperty = function (name) {
                 }
 
                 value.gradient.colors.forEach(function (color, index, colors) {
-                    property += 'rgb(' + Math.round(color.red) + ','
+                    property += 'rgba(' + Math.round(color.red) + ','
                         + Math.round(color.green) + ',' 
-                        + Math.round(color.blue) 
+                        + Math.round(color.blue) + ', '
+                        + (value.gradient.opacity / 100).toFixed(2)
                         + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
 
                     if (index < colors.length - 1) {
                         property += ', ';
                     }
                 });
-                
+
                 property += ')';
 
             } else if (null !== value.color.red) {
@@ -419,6 +306,25 @@ Layer.prototype.getCSSProperty = function (name) {
 
         break;
 
+        case 'color':
+
+            if (0 !== Object.keys(value).length) {
+                property += 'rgb('
+                    + Math.round(value.red) + ', '
+                    + Math.round(value.green) + ', '
+                    + Math.round(value.blue) + ')';
+            } else {
+                property += 'inherit';
+            }
+
+        break;
+
+        case 'fontSize':
+
+            property += Math.round(value) + 'px';
+
+        break;
+
         default: 
             console.log('CSS property "' + name + '" is not regonized.');
         break;
@@ -435,6 +341,15 @@ Layer.prototype.getCSS = function () {
 
     Object.keys(this.css).forEach(function (property) {
         css += '\t' + _this.getCSSProperty(property) + ';\n'; 
+        
+        // Implementing certain styles require additional rules based
+        // on the type of the element and the property being styled
+        if ('textLayer' === _this.type && 'background' === property) {
+            // TODO: Fix gradient opacity on for text layers.
+            css += '\t' + '-webkit-background-clip: text;\n';
+            // css += '\t' + '-webkit-text-fill-color: transparent;\n';
+        }
+
     });
 
     css += '}';
@@ -561,125 +476,6 @@ structure.output();
 
 return;
 
-
-
-
-function setBoundries(style, layer, bounds) {
-    style.top = Math.round(bounds.top);
-    if (undefined !== layer.properties.parent.properties.parsedCSS.top) {
-        style.top -= layer.properties.parent.properties.parsedCSS.top;
-    }
-
-    style.left = Math.round(bounds.left);
-    if (undefined !== layer.properties.parent.properties.parsedCSS.left) {
-        style.left -= layer.properties.parent.properties.parsedCSS.left;
-    }
-
-    style.bottom = Math.round(bounds.bottom);
-    if (undefined !== layer.properties.parent.properties.parsedCSS.top) {
-        style.bottom -= layer.properties.parent.properties.parsedCSS.top;
-    } 
-
-    style.right = Math.round(bounds.right);
-    if (undefined !== layer.properties.parent.properties.parsedCSS.left) {
-        style.right -= layer.properties.parent.properties.parsedCSS.left;
-    }
-}
-
-function parseLayerStyles(layer) {
-    var style = {};
-
-    switch (layer.type) {
-        case 'textLayer':
-            temp = layer.text.textStyleRange[0].textStyle;
-            style.color = 'rgb(' + Math.round(temp.color.red) + ', ' 
-                + Math.round(temp.color.green) + ', ' + Math.round(temp.color.blue) + ')';
-            
-            setBoundries(style, layer, layer.bounds);
-
-            style['font-family'] = temp.fontName;
-            style['font-size'] = temp.size + 'px';
-
-            Object.keys(layer.bounds).forEach(function (boundry) {
-                style[boundry] = Math.round(layer.bounds[boundry]);
-            });
-
-        break;
-
-        case 'shapeLayer':
-            style.background = 'rgb(' + Math.round(layer.fill.color.red) + ', ' 
-                + Math.round(layer.fill.color.green) 
-                + ', ' + Math.round(layer.fill.color.blue) + ')';
-
-            setBoundries(style, layer, layer.path.bounds);
-
-            style['z-index'] = layer.index;
-            style.width = (style.right - style.left) + 'px';
-            style.height = (style.bottom - style.top) + 'px';
-        break;
-        default:
-            console.log('The "' + layer.type + '" layer type is not regonized.');
-        break;
-    }
-
-    style['z-index'] = layer.index;
-
-    layer.properties.parsedCSS = style;
-}
-
-function parseSectionStyles(section) {
-    var style = section.properties.parsedCSS;
-
-    if (undefined !== section.properties.bounds) {
-
-        setBoundries(style, section, section.properties.bounds);
-
-        style.width = (style.right - style.left) + 'px';
-        style.height = (style.bottom - style.top) + 'px';
-
-        style['z-index'] = section.properties.index;
-
-    }
-
-    section.properties.parsedCSS = style;
-
-    return style;
-}
-
-function addLinkages(section, parent) {
-
-    section.sections.forEach(function (childSection) {
-        childSection.properties.parent = section;
-        addLinkages(childSection, section);
-    });
-
-    section.layers.forEach(function (layer, index) {
-        
-        layer.properties.parent = section;
-
-        if (undefined !== section.layers[index - 1]) {
-            layer.properties.prev = section.layers[index - 1];
-        }
-
-        if (undefined !== section.layers[index + 1]) {
-            layer.properties.next = section.layers[index + 1]
-        }
-    });
-}
-
-function parseStyles(section) {
-
-    parseSectionStyles(section);
-
-    section.sections.forEach(function (childSection) {
-        parseStyles(childSection);
-    });
-
-    section.layers.forEach(function (layer) {
-        parseLayerStyles(layer);
-    });
-}
-
 function findFloatables(layers, type) {
     var flotables = [],
         firstElementsInRow = [],
@@ -783,123 +579,3 @@ function findFloatables(layers, type) {
 // - Daca un element este intre alte elemente care au aceeasi distanta intre ele
 // si unul dintre elemente incepe de la marginea unui container
 // - 
-
-function processCSS(section) {
-    var floatableLayers,
-        floatableSections;
-
-    // Find floatable sections
-    if (section.sections.length > 1) {
-        console.log("Sending sections");
-        // floatableSections = findFloatables(section.sections, 'sections');
-    }
-
-    console.log(floatableSections);
-
-    section.sections.forEach(function (childSection) {
-        if (undefined !== floatableSections && floatableSections.elements.some(function (floated) {
-            if (floated.id === childSection.id) {
-                return true;
-            } else {
-                return false;
-            }
-        })) {
-
-            childSection.properties.css.float = 'left';
-            if (-1 === floatableSections.firstElementsInRow.indexOf(childSection.id)) {
-                console.log("Setting margin column");
-                childSection.properties.css['margin-left'] = floatableSections.marginColumn + 'px';
-            }
-            childSection.properties.css['margin-bottom'] = floatableSections.marginRow + 'px';
-        } else {
-            childSection.properties.css.position = 'absolute';
-
-            childSection.properties.css.left = childSection.properties.parsedCSS.left + 'px';
-            childSection.properties.css.top = childSection.properties.parsedCSS.top + 'px';
-            childSection.properties.css.width = childSection.properties.parsedCSS.right - childSection.properties.parsedCSS.left + "px";
-        }
-        
-        processCSS(childSection);
-    });
-
-    // floatableLayers = findFloatables(section.layers, 'layers');
-
-    section.layers.forEach(function (layer) {
-
-        // Decide if the element requires floating.
-        if (undefined !== floatableLayers && floatableLayers.elements.some(function (floated) {
-            if (floated.id === layer.id) {
-                return true;
-            } else {
-                return false;
-            }
-        })) {
-            layer.properties.css.float = 'left';
-
-            // If the layer is the first layer then the margin shouldn't be 
-            // the same as with the rest of the layers.
-            // console.log('For ' + section.properties.cssName + ' vs ' + layer.properties.cssName + ' ' + JSON.stringify(floatableLayers.firstElementsInRow));
-            if (-1 === floatableLayers.firstElementsInRow.indexOf(layer.id)) {
-                layer.properties.css['margin-left'] = floatableLayers.marginColumn + 'px';
-            }
-
-            layer.properties.css['margin-bottom'] = floatableLayers.marginRow + 'px';
-        } else {
-
-            // The element is not floated.
-            layer.properties.css.position = 'absolute'; 
-            layer.properties.css.left = layer.properties.parsedCSS.left + 'px';
-            layer.properties.css.top = layer.properties.parsedCSS.top + 'px';
-        }
-
-        layer.properties.css.background = layer.properties.parsedCSS.background;
-        
-        if (undefined !== layer.properties.parsedCSS.width) {
-            layer.properties.css.width = layer.properties.parsedCSS.width;
-        }
-
-        if (undefined !== layer.properties.parsedCSS.height) {
-            layer.properties.css.height = layer.properties.parsedCSS.height;
-        }
-
-    });
-
-}
-
-// Handle Structure aspects
-structure = createStructure(psd.layers);
-fs.writeFile('./structure.json', JSON.stringify(structure, null, 4), function (err) {
-    if(err) {
-        console.log(err);
-    } else {
-        console.log('Structure.json is saved!');
-    }
-});
-
-// Set parent, next, prev for traversing
-addLinkages(structure);
-
-// Parse styles and prepare for css process
-parseStyles(structure);
-
-// Process CSS
-processCSS(structure);
-
-html = generateHTML(structure);
-
-// Prepare styles
-Object.keys(styles).forEach(function (layerName) {
-    var css = "";
-    Object.keys(styles[layerName]).forEach(function (cssProperty) {
-        css += "\t" + cssProperty + ':' + styles[layerName][cssProperty] + ';' + "\n";
-    });
-
-    stylesOutput += "\n" + '#' + layerName + ' { ' + "\n" + css + '}';
-});
-
-
-
-
-
-
-
