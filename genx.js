@@ -6,85 +6,456 @@ var psd = require('./sample.json'),
     html = '',
     structure = {};
 
+
+
+/**
+ * Has method
+ * Will provide a response for a chain of Object properties
+ * e.g: x.has('one.of.these.properties');
+ */
+Object.defineProperty(Object.prototype, 'has', {
+    enumerable : false,
+    value : function(params) {
+        var tester;
+        if ('function' !== typeof params && 'string' === typeof params) {
+            try {
+                eval('tester = this.' + params);
+                // This eval is not evil , as long is completely secured
+                if (undefined === tester) {
+                    throw new Error('not available');
+                }
+            } catch (e) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        return true;
+    }
+});
+
+/**
+ * getValueOf
+ * Retrieves the value of a chained Object properties
+ */
+Object.defineProperty(Object.prototype, '_get', {
+    enumerable : false,
+    value : function(params, fallback) {
+        var value;
+        if ('function' !== typeof params && 'string' === typeof params) {
+
+            try {
+                eval('value = this.' + params.toString());
+                if (undefined === value) {
+                    throw new Error('not available');
+                }
+            } catch (e) {
+                if (undefined !== fallback) {
+                    return fallback;
+                }
+                return undefined;
+            }
+        } else {
+            return false;
+        }
+        return value;
+    }
+});
+
+/**
+ * unsetValueOf
+ * Removes a reference from a given object
+ */
+
+Object.defineProperty(Object.prototype, 'unsetValueOf', {
+    enumerable : false,
+    value : function(params) {
+        var value;
+
+        if ('function' !== typeof params && 'string' === typeof params) {
+            try {
+                eval('delete this.' + params);
+            } catch (e) {
+                return undefined;
+            }
+        } else {
+            return false;
+        }
+        return value;
+    }
+});
+
+/**
+ * setValueOf
+ * Creates the desired structure and assigns a desired value to it
+ */
+Object.defineProperty(Object.prototype, 'setValueOf', {
+    enumerable : false,
+    value : function(params, value, recall) {
+        var tree, i, chain, isValid = true, setValue, placebo, tempTree, finalVar;
+
+        if (true === this instanceof String) {
+            return false;
+        }
+
+        if (true === this instanceof Number) {
+            return false;
+        }
+
+        if (true === this instanceof Boolean) {
+            return false;
+        }
+
+        if (true === this instanceof Function) {
+            return false;
+        }
+
+        if (true === this instanceof Array) {
+            return false;
+        }
+
+        if ('object' !== typeof this) {
+            return false;
+        }
+
+        if ('number' === typeof this) {
+            return false;
+        }
+
+        setValue = function() {
+            try {
+                if (/\./.test(params)) {
+                    tempTree = params.split('.');
+                    finalVar = tempTree.pop();
+                    eval('placebo = this.' + tempTree.join('.'));
+                    if (undefined !== placebo) {
+                        placebo[finalVar] = value;
+                    }
+                } else {
+                    this[params] = value;
+                }
+            } catch (e) {
+                console.error('Object prototype setValueOf has failed');
+                console.error(e);
+                return false;
+            }
+        };
+
+        if ('function' !== typeof params && 'string' === typeof params) {
+            if (/\./.test(params)) {
+
+                //Get the property tree
+                tree = params.split('.');
+
+                if (0 < tree.length) {
+                    chain = '';
+
+                    for ( i = 0; i < Math.round(tree.length - 1); i += 1) {
+                        chain += tree[i];
+                        if (false === this.has(chain)) {
+                            isValid = false;
+                            this.setValueOf(chain, {}, true);
+                        }
+                        if (i !== tree.length - 1) {
+                            chain += ".";
+                        }
+
+                    }
+
+                    chain += tree[tree.length - 1];
+
+                    if (false === isValid) {
+                        this.setValueOf(chain, value, true);
+                        return;
+                    } else {
+                        if (false === this.has(params)) {
+                            setValue.call(this);
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            if (false === this.has(params)) {
+                setValue.call(this);
+            }
+        }
+        return true;
+    }
+});
+
+
+// All sections are still layers.
+// The semantic is given by the way the interaction with the dom will occur
+// A layer must have: 
+// - tag: div, p, span, etc
+// - class
+// - id
+// - text
+// - parent/nextSibling/prevSibling for traversing
+// - css all the css properties that will eventually end in the stylesheet
+
+// Parsing will be made in 3 stages:
+// 1. The parsing of the PSD document with absolute styles - Done
+// 2. From the absolute styles connections between elements will emerge (e.g. floats, overlay, etc)
+// 3. Establish the logical order of dom elements (based on float, etc)
+// 4. Find patterns in styles through css duplication, hierachy and inheritance to optimise the css creation
+// 5. Create the HTML version of the structure
+// 6. Create the CSS version of the layers
+// 7. Create a file with the HTML and CSS code
+
+
 // TODO: For layers that have the same name regardless of their position
 // in the structure tree, allocate different cssNames to avoid id collision
 
 
-function createStructure(sections, parent) {
-
-    // Is the first call from the root?
-    if (undefined === parent) {
-        parent = {
-            properties: {
-                cssName: 'global',
-                parsedCSS: {
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    right: 0
-                },
-                css: {}
+function parseCSS(style) {
+    var css = {
+        top: style.bounds.top || 0,
+        right: style.bounds.right || 0,
+        bottom: style.bounds.bottom || 0,
+        left: style.bounds.left || 0,
+        position: 'static',
+        background: {
+            color: {
+                red: style._get('fill.color.red', null),
+                green: style._get('fill.color.green', null),
+                blue: style._get('fill.color.blue', null)
+            }
+        },
+        opacity: style._get('blendOptions.opacity.value', 0) / 100,
+        border: {
+            color: {
+                red: style._get('layerEffects.frameFX.color.red', null),
+                green: style._get('layerEffects.frameFX.color.green', null),
+                blue: style._get('layerEffects.frameFX.color.blue', null)
             },
-            sections: [],
-            layers: [] // This layers global section hosts layers without a section
-        };
-    } else {
-        // The parent is a section
+            size: 0,
+            radius: {
+                topLeft: 0,
+                topRight: 0,
+                bottomLeft: 0,
+                bottomRight: 0
+            }
+        },
+        zIndex: style.index
+    };
+
+    // Fill color overwritted by the blend options
+    css.background.color = {
+        red: style._get('layerEffects.solidFill.color.red', css.background.color.red),
+        green: style._get('layerEffects.solidFill.color.green', css.background.color.green),
+        blue: style._get('layerEffects.solidFill.color.green', css.background.color.green)
+    };
+
+    // Add gradient logic
+
+
+    // Overwrite positioning for now
+    css.position = 'absolute';
+
+    css.width = css.right - css.left;
+    css.height = css.bottom - css.top;
+
+    return css;
+}
+
+function getCSSName(name) {
+    return name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+function makeCSSProperty(name, value) {
+    var property = getCSSName(name) + ': ';
+
+    switch (name) {
+        case 'top':
+            property += Math.round(value) + 'px';
+        break;
+        
+        case 'right':
+            property += 'auto'; // Math.round(value) + 'px';
+        break;
+        
+        case 'bottom':
+            property += 'auto'; // Math.round(value) + 'px';
+        break;
+
+        case 'left':
+            property += Math.round(value) + 'px';
+        break;
+
+        case 'position':
+            property += value;
+        break;
+
+        case 'width':
+            property += value + 'px';
+        break;
+
+        case 'height':
+            property += value + 'px';
+        break;
+
+        case 'background':
+
+            if (null !== value.color.red) {
+                property += 'rgb('
+                    + Math.round(value.color.red) + ', '
+                    + Math.round(value.color.green) + ', '
+                    + Math.round(value.color.blue)
+                    + ')';
+            } else {
+                property += 'transparent';
+            }
+
+        break;
+
+        case 'zIndex':
+            property += value;
+        default: 
+            console.log('CSS property "' + name + '" is not regonized.');
+        break;
     }
 
-    sections.forEach(function (layer, index) {
-        var section = {};
+    return property;
+}
 
-        layer.properties = {
-            css: {},
-            parsedCSS: { },
-            cssName: layer.name.replace(/\s/g, '-')
-        };
+function Layer(layer) {
+    var _this = this;
 
-        switch (layer.type) {
-            case 'layerSection':
+    this.id = layer.id;
+    this.siblings = [];
+    this.visible = layer.visible;
+    this.name = layer.name;
+    this.cssName = layer.name.replace(/\s/g, '-');
+    this.index = layer.index;
+    this.text = '';
 
-                Object.keys(layer).forEach(function (property) {
-                    if (-1 === ['layers', 'properties'].indexOf(property)) {
-                        layer.properties[property] = layer[property];
-                    } else {
-                        // Layers are not added to the object.
-                        // They will be added in the layers property 
-                        // on the parent object
-                    }
-                });
+    // Presumed css styles
+    this.css = parseCSS(layer);
 
-                section = {
-                    id: layer.properties.id,
-                    properties: layer.properties,
-                    sections: [],
-                    layers: []
-                };
+    // Layer type specific configuration
+    switch (layer.type) {
+        case 'layerSection':
+            this.tag = 'div';
+        break;
 
-                parent.sections.push(section);
-                if (undefined !== layer.layers) {
-                    createStructure(layer.layers, section);
-                } else {
-                    // The section does not have other layers
-                }
+        case 'shapeLayer':
+            this.tag = 'div';
+        break;
 
-            break;
-            
-            case 'shapeLayer':
-                parent.layers.push(layer);
-            break;
+        case 'textLayer':
+            this.tag = 'p';
+        break;
 
-            case 'textLayer':
-                parent.layers.push(layer);
-            break;
-            default: 
-                console.log('The "' + layer.type + '" layer type is not recognised.');
-            break;
-        }
+        case 'layer':
+            this.tag = 'img';
+        break;
+
+        default: 
+            console.log('The layer type "' + layer.type + '" is no recognised.');
+        break;
+    }
+
+    // Parse children layers.
+    if (undefined !== layer.layers) {
+        layer.layers.forEach(function (siblingLayer) {
+            _this.siblings.push(new Layer(siblingLayer));
+        });
+    }
+
+}
+
+Layer.prototype.getCSS = function () {
+    var _this = this,
+        css = '';
+
+    css += '\n#' + this.cssName + ' {\n';
+
+    Object.keys(this.css).forEach(function (property) {
+        css += '\t' + makeCSSProperty(property, _this.css[property]) + ';\n'; 
     });
 
-    return parent;
+    css += '}';
+
+    return css;
+};
+
+Layer.prototype.getHTML = function () {
+    var html = '';
+
+    html += '\n<' + this.tag + ' id="' + this.cssName + '">' + this.text + '</' + this.tag + '>';
+
+    return html;
+};
+
+function Structure(document) {
+    var _this = this;
+
+    this.doc = [];
+    this.layers = [];
+    this.html = '';
+    this.css = '';
+
+    this.header = '<!DOCTYPE html>' +
+        '<head>' +
+        '<link rel="stylesheet" href="style.css">' +
+        '</head>' +
+        '<body>';
+    
+    this.footer = '</body></html>';
+
+    document.layers.forEach(function (layer) {
+        _this.layers.push(new Layer(layer));
+    });
 }
+
+Structure.prototype.refreshCode = function () {
+    var _this = this;
+
+    this.html = "";
+    this.css = "";
+
+    function getCodeFromLayer(layer) {
+        _this.html += layer.getHTML();
+        _this.css += layer.getCSS();
+        layer.siblings.forEach(getCodeFromLayer);
+    }
+
+    this.layers.forEach(function (layer) {
+        getCodeFromLayer(layer);
+    });
+
+    this.html = this.header + this.html + this.footer;
+};
+
+Structure.prototype.toJSON = function (filename) {
+    fs.writeFile(filename, JSON.stringify(this.layers, null, 4), function (err) {
+        if(err) {
+            console.log(err);
+        } else {
+            console.log('Structure.json is saved!');
+        }
+    });
+};
+
+Structure.prototype.output = function () {
+    fs.writeFileSync('./index.html', this.html);
+    fs.writeFileSync('./style.css', this.css);
+};
+
+var structure = new Structure(psd);
+
+structure.toJSON('./structure.json');
+structure.refreshCode();
+
+structure.output();
+
+
+
+return;
+
+
 
 
 function setBoundries(style, layer, bounds) {
@@ -167,40 +538,6 @@ function parseSectionStyles(section) {
     section.properties.parsedCSS = style;
 
     return style;
-}
-
-function generateHTML(section) {
-    var html = "";
-
-    html += '<div id="' + section.properties.cssName + '"><span class="groupName">' + section.properties.cssName + '</span>';
-    styles[section.properties.cssName] = section.properties.css;
-
-    section.sections.forEach(function (childSection) {
-        html += generateHTML(childSection);
-    });
-
-    section.layers.forEach(function (layer) {
-
-        switch (layer.type) {
-            case 'textLayer':
-                html += '<p id="' + layer.properties.cssName + '">' + layer.text.textKey + '</p>'; 
-            break;
-
-            case 'shapeLayer':
-                html += '<div id="' + layer.properties.cssName + '">' + layer.properties.cssName + '</div>';
-            break;
-
-            default: 
-                console.log('The "' + layer.type + '" layer type is not recognised.');
-            break;
-        }
-
-        styles[layer.properties.cssName] = layer.properties.css;
-    });
-
-    html += '</div>';
-
-    return html;
 }
 
 function addLinkages(section, parent) {
@@ -455,21 +792,7 @@ Object.keys(styles).forEach(function (layerName) {
 });
 
 
-// Helper styles
-stylesOutput += ".groupName { position: absolute; top: -20px; left: 0; }"
 
-stylesOutput += '</style>';
-doc += stylesOutput;
-doc += html;
-doc += '</body></html>';
-
-fs.writeFile('./index.html', doc, function (err) {
-    if(err) {
-        console.log(err);
-    } else {
-        console.log('Index.html is saved!');
-    }
-});
 
 
 
