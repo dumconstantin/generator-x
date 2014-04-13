@@ -348,7 +348,7 @@ function processCSS(section) {
     // Find floatable sections
     if (section.sections.length > 1) {
         console.log("Sending sections");
-        floatableSections = findFloatables(section.sections, 'sections');
+        // floatableSections = findFloatables(section.sections, 'sections');
     }
 
     console.log(floatableSections);
@@ -379,7 +379,7 @@ function processCSS(section) {
         processCSS(childSection);
     });
 
-    floatableLayers = findFloatables(section.layers, 'layers');
+    // floatableLayers = findFloatables(section.layers, 'layers');
 
     section.layers.forEach(function (layer) {
 
