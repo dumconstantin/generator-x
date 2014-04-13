@@ -1,6 +1,6 @@
 {
     "version": "1.0.0",
-    "timeStamp": 1397331158.287,
+    "timeStamp": 1397403005.666,
     "id": 1138,
     "file": "/Users/constantin/Desktop/generatorx.psd",
     "bounds": {
@@ -10,7 +10,7 @@
         "right": 900
     },
     "selection": [
-        14
+        8
     ],
     "resolution": 72,
     "globalLight": {
@@ -287,8 +287,65 @@
                                 "bottom": 72,
                                 "right": 296
                             },
+                            "boundsWithFX": {
+                                "top": 32,
+                                "left": 256,
+                                "bottom": 72,
+                                "right": 296
+                            },
                             "visible": true,
                             "clipped": false,
+                            "layerEffects": {
+                                "gradientFill": {
+                                    "enabled": true,
+                                    "gradient": {
+                                        "name": "Custom",
+                                        "colors": [
+                                            {
+                                                "color": {
+                                                    "red": 225.000002,
+                                                    "green": 0,
+                                                    "blue": 25.003891
+                                                },
+                                                "type": "userStop",
+                                                "location": 0,
+                                                "midpoint": 50
+                                            },
+                                            {
+                                                "color": {
+                                                    "red": 255,
+                                                    "green": 255,
+                                                    "blue": 255
+                                                },
+                                                "type": "userStop",
+                                                "location": 1034,
+                                                "midpoint": 50
+                                            },
+                                            {
+                                                "color": {
+                                                    "red": 255,
+                                                    "green": 215.996111,
+                                                    "blue": 0.003891
+                                                },
+                                                "type": "userStop",
+                                                "location": 3226,
+                                                "midpoint": 50
+                                            },
+                                            {
+                                                "color": {
+                                                    "red": 0,
+                                                    "green": 96.000002,
+                                                    "blue": 27.003891
+                                                },
+                                                "type": "userStop",
+                                                "location": 4096,
+                                                "midpoint": 50
+                                            }
+                                        ]
+                                    },
+                                    "reverse": true
+                                }
+                            },
                             "fill": {
                                 "color": {
                                     "red": 236.156401,
