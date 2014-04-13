@@ -211,16 +211,21 @@ Object.defineProperty(Object.prototype, 'setValueOf', {
 
 function parseCSS(style) {
     var css = {
-        top: style.bounds.top || 0,
-        right: style.bounds.right || 0,
-        bottom: style.bounds.bottom || 0,
-        left: style.bounds.left || 0,
+        top: style._get('bounds.top', 0),
+        right: style._get('bounds.right', 0),
+        bottom: style._get('bounds.bottom', 0),
+        left: style._get('bounds.left', 0),
         position: 'static',
         background: {
             color: {
                 red: style._get('fill.color.red', null),
                 green: style._get('fill.color.green', null),
                 blue: style._get('fill.color.blue', null)
+            },
+            gradient: {
+                colors: [],
+                locations: [],
+                reverse: null
             }
         },
         opacity: style._get('blendOptions.opacity.value', 0) / 100,
@@ -245,11 +250,26 @@ function parseCSS(style) {
     css.background.color = {
         red: style._get('layerEffects.solidFill.color.red', css.background.color.red),
         green: style._get('layerEffects.solidFill.color.green', css.background.color.green),
-        blue: style._get('layerEffects.solidFill.color.green', css.background.color.green)
+        blue: style._get('layerEffects.solidFill.color.blue', css.background.color.blue)
     };
 
-    // Add gradient logic
+    // Gradient Colors
+    style._get('layerEffects.gradientFill.gradient.colors', []).forEach(function (color) {
+        css.background.gradient.colors.push({
+            red: color.color.red,
+            green: color.color.green,
+            blue: color.color.blue,
+            location: color.location,
+            type: color.type,
+            midpoint: color.midpoint
+        });
+        css.background.gradient.locations.push(color.location);
+    });
 
+    // The color array is in reverse order due to the way is added
+    css.background.gradient.colors.reverse();
+
+    css.background.gradient.reverse = style._get('layerEffects.gradientFill.reverse', false);
 
     // Overwrite positioning for now
     css.position = 'absolute';
@@ -260,65 +280,13 @@ function parseCSS(style) {
     return css;
 }
 
-function getCSSName(name) {
-    return name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-}
-
-function makeCSSProperty(name, value) {
-    var property = getCSSName(name) + ': ';
-
-    switch (name) {
-        case 'top':
-            property += Math.round(value) + 'px';
-        break;
-        
-        case 'right':
-            property += 'auto'; // Math.round(value) + 'px';
-        break;
-        
-        case 'bottom':
-            property += 'auto'; // Math.round(value) + 'px';
-        break;
-
-        case 'left':
-            property += Math.round(value) + 'px';
-        break;
-
-        case 'position':
-            property += value;
-        break;
-
-        case 'width':
-            property += value + 'px';
-        break;
-
-        case 'height':
-            property += value + 'px';
-        break;
-
-        case 'background':
-
-            if (null !== value.color.red) {
-                property += 'rgb('
-                    + Math.round(value.color.red) + ', '
-                    + Math.round(value.color.green) + ', '
-                    + Math.round(value.color.blue)
-                    + ')';
-            } else {
-                property += 'transparent';
-            }
-
-        break;
-
-        case 'zIndex':
-            property += value;
-        default: 
-            console.log('CSS property "' + name + '" is not regonized.');
-        break;
-    }
-
-    return property;
-}
+var getUnique = (function () {
+    var id = 0;
+    return function () {
+        id += 1;
+        return id;
+    };
+}());
 
 function Layer(layer) {
     var _this = this;
@@ -327,7 +295,7 @@ function Layer(layer) {
     this.siblings = [];
     this.visible = layer.visible;
     this.name = layer.name;
-    this.cssName = layer.name.replace(/\s/g, '-');
+    this.cssName = layer.name.replace(/\s/g, '-') + '-' + getUnique();
     this.index = layer.index;
     this.text = '';
 
@@ -345,7 +313,8 @@ function Layer(layer) {
         break;
 
         case 'textLayer':
-            this.tag = 'p';
+            this.tag = 'span';
+            this.text = layer._get('text.textKey', '');
         break;
 
         case 'layer':
@@ -366,6 +335,98 @@ function Layer(layer) {
 
 }
 
+Layer.prototype.getCSSName = function (name) {
+    return name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+};
+
+
+Layer.prototype.getCSSProperty = function (name) {
+    var property = this.getCSSName(name) + ': ',
+        value = this.css[name];
+
+    switch (name) {
+        case 'top':
+            property += Math.round(value) - Math.round(this.parent.css.top) + 'px';
+        break;
+        
+        case 'right':
+            property += 'auto'; // Math.round(value) + 'px';
+        break;
+        
+        case 'bottom':
+            property += 'auto'; // Math.round(value) + 'px';
+        break;
+
+        case 'left':
+            property += Math.round(value) - Math.round(this.parent.css.left) + 'px';
+        break;
+
+        case 'position':
+            property += value;
+        break;
+
+        case 'width':
+            property += value + 'px';
+        break;
+
+        case 'height':
+            property += value + 'px';
+        break;
+
+        case 'background':
+            if (0 < value.gradient.colors.length) {
+
+                property += 'linear-gradient(';
+
+                if (true === value.gradient.reverse) {
+                    value.gradient.colors.reverse();
+                }
+
+                value.gradient.colors.forEach(function (color, index, colors) {
+                    property += 'rgb(' + Math.round(color.red) + ','
+                        + Math.round(color.green) + ',' 
+                        + Math.round(color.blue) 
+                        + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
+
+                    if (index < colors.length - 1) {
+                        property += ', ';
+                    }
+                });
+                
+                property += ')';
+
+            } else if (null !== value.color.red) {
+                property += 'rgb('
+                    + Math.round(value.color.red) + ', '
+                    + Math.round(value.color.green) + ', '
+                    + Math.round(value.color.blue)
+                    + ')';
+            } else {
+                property += 'transparent';
+            }
+
+        break;
+
+        case 'zIndex':
+            property += value;
+        break;
+        
+        case 'border':
+
+        break;
+
+        case 'opacity':
+
+        break;
+
+        default: 
+            console.log('CSS property "' + name + '" is not regonized.');
+        break;
+    }
+
+    return property;
+};
+
 Layer.prototype.getCSS = function () {
     var _this = this,
         css = '';
@@ -373,18 +434,29 @@ Layer.prototype.getCSS = function () {
     css += '\n#' + this.cssName + ' {\n';
 
     Object.keys(this.css).forEach(function (property) {
-        css += '\t' + makeCSSProperty(property, _this.css[property]) + ';\n'; 
+        css += '\t' + _this.getCSSProperty(property) + ';\n'; 
     });
 
     css += '}';
+
+    this.siblings.forEach(function (sibling) {
+        css += sibling.getCSS();
+    });
 
     return css;
 };
 
 Layer.prototype.getHTML = function () {
-    var html = '';
+    var html = '',
+        content = '';
 
-    html += '\n<' + this.tag + ' id="' + this.cssName + '">' + this.text + '</' + this.tag + '>';
+    content += this.text;
+
+    this.siblings.forEach(function (sibling) {
+        content += sibling.getHTML();
+    });
+
+    html += '\n<' + this.tag + ' id="' + this.cssName + '">' + content + '</' + this.tag + '>';
 
     return html;
 };
@@ -397,6 +469,14 @@ function Structure(document) {
     this.html = '';
     this.css = '';
 
+    // This is the top most parent of the document. 
+    // Catch all traversal that arrive here.
+    this.parent = {
+        css: parseCSS({})
+    };
+
+    this.document = document;
+
     this.header = '<!DOCTYPE html>' +
         '<head>' +
         '<link rel="stylesheet" href="style.css">' +
@@ -404,33 +484,59 @@ function Structure(document) {
         '<body>';
     
     this.footer = '</body></html>';
+}
 
-    document.layers.forEach(function (layer) {
+Structure.prototype.parse = function () {
+    var _this = this;
+    this.document.layers.forEach(function (layer) {
         _this.layers.push(new Layer(layer));
     });
-}
+};
+
+Structure.prototype.link = function () {
+
+    function linkSiblings(siblings, parent) {
+        siblings.forEach(function (sibling, index) {
+            
+            sibling.parent = parent;
+            
+            if (0 < index) {
+                sibling.prev = siblings[index - 1];
+            }
+
+            if (siblings.length > index + 1) {
+                sibling.next = siblings[index + 1];
+            }
+ 
+            linkSiblings(sibling.siblings, sibling);
+        });
+    }
+
+    linkSiblings(this.layers, this.parent);
+};
 
 Structure.prototype.refreshCode = function () {
     var _this = this;
 
+    // Reset html and css
     this.html = "";
     this.css = "";
 
-    function getCodeFromLayer(layer) {
-        _this.html += layer.getHTML();
-        _this.css += layer.getCSS();
-        layer.siblings.forEach(getCodeFromLayer);
-    }
-
     this.layers.forEach(function (layer) {
-        getCodeFromLayer(layer);
+        _this.html = layer.getHTML();
+        _this.css = layer.getCSS();
     });
 
     this.html = this.header + this.html + this.footer;
 };
 
 Structure.prototype.toJSON = function (filename) {
-    fs.writeFile(filename, JSON.stringify(this.layers, null, 4), function (err) {
+
+    function removeLinks(name) {
+        console.log(name);
+    }
+
+    fs.writeFile(filename, JSON.stringify(this.layers, removeLinks, 4), function (err) {
         if(err) {
             console.log(err);
         } else {
@@ -445,13 +551,13 @@ Structure.prototype.output = function () {
 };
 
 var structure = new Structure(psd);
+structure.parse();
+structure.link();
 
 structure.toJSON('./structure.json');
 structure.refreshCode();
 
 structure.output();
-
-
 
 return;
 
