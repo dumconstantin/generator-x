@@ -447,8 +447,12 @@ Structure.prototype.refreshCode = function () {
 
 Structure.prototype.toJSON = function (filename) {
 
-    function removeLinks(name) {
-        console.log(name);
+    function removeLinks(name, value) {
+        if (-1 === ['parent', 'prev', 'next'].indexOf(name)) {
+            return value;
+        } else {
+            return undefined; // When undefined the property is removed from the JSON.
+        }
     }
 
     fs.writeFile(filename, JSON.stringify(this.layers, removeLinks, 4), function (err) {
