@@ -14,7 +14,11 @@
         _document,
         regenerateDocument = false,
         regenerateImages = false,
-        structure = {};
+        structure = {},
+        fonts = {
+            'Oswald': 'oswaldbook',
+            'IcoMoon': 'icomoonregular'
+        };
 
 
     function init(generator) {
@@ -98,6 +102,68 @@
     function start() {
         psdFile = require(path.resolve(__dirname, 'sample.json'));
         runGenerator();
+    }
+
+    function getCSSFontFamily(fontName) {
+        var font = "";
+        
+        switch (fontName) {
+            case 'Oswald':
+                font += "\n @font-face {"
+                    + " font-family: 'oswaldbook'; " 
+                    + " src: url('fonts/oswald-regular.eot');"
+                    + " src: url('fonts/oswald-regular.eot?#iefix') format('embedded-opentype'),"
+                    + "     url('fonts/oswald-regular.woff') format('woff'),"
+                    + "     url('fonts/oswald-regular.ttf') format('truetype'),"
+                    + "     url('fonts/oswald-regular.svg#oswaldbook') format('svg');"
+                    + " font-weight: normal;"
+                    + " font-style: normal; " 
+                    + " } \n";
+            break;
+
+            case 'IcoMoon':
+                font += "@font-face { " 
+                    + " font-family: 'icomoonregular';"
+                    + " src: url('fonts/icomoon.eot');"
+                    + " src: url('fonts/icomoon.eot?#iefix') format('embedded-opentype'),"
+                    + "     url('fonts/icomoon.woff') format('woff'),"
+                    + "     url('fonts/icomoon.ttf') format('truetype'),"
+                    + "     url('fonts/icomoon.svg#icomoonregular') format('svg');"
+                    + " font-weight: normal;"
+                    + " font-style: normal;"
+                    + " } \n";
+            break;
+
+            case 'Futura':
+
+            break;
+
+            case 'Helvetica':
+
+            break;
+
+            case 'Helvetica Neue':
+
+            break;
+
+            case 'Arial':
+
+            break;
+
+            case 'Myriad':
+
+            break;
+
+            case 'Tipogram':
+
+            break;
+
+            default:
+                console.log('The font name "' + fontName + '" is not supported.');
+            break;
+        }
+
+        return font;
     }
 
     /**
@@ -459,11 +525,11 @@
             break;
 
             case 'fontFamily':
-                
-                property += value;
-
-                    console.log(value);
-
+                if (undefined !== fonts[value]) {
+                    property += fonts[value];
+                } else {
+                    property += value;
+                }
 
             break;
 
@@ -485,6 +551,8 @@
 
         css += '\n#' + this.cssName + ' {\n';
 
+        var addFont = "";
+
         Object.keys(this.css).forEach(function (property) {
             css += '\t' + _this.getCSSProperty(property) + ';\n'; 
             
@@ -496,9 +564,17 @@
                 // css += '\t' + '-webkit-text-fill-color: transparent;\n';
             }
 
+            if ('textLayer' === _this.type && 'fontFamily' === property) {
+                addFont = _this.css[property];
+            }
+
+            // console.log(getCSSFontFamily(_this[property]));
+
         });
 
         css += '}';
+
+        css += getCSSFontFamily(addFont);
 
         this.siblings.forEach(function (sibling) {
             css += sibling.getCSS();
