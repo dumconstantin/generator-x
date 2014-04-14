@@ -6,11 +6,14 @@
         fs = require('fs'),
         path = require('path'),
         PNG = require('pngjs').PNG,
-        psdFile = require('./sample.json'),
+        psdFile,
         doc = '<!DOCTYPE html><body>',
         styles = {},
         stylesOutput = '<style>',
         html = '',
+        _document,
+        regenerateDocument = false,
+        regenerateImages = false,
         structure = {};
 
 
@@ -33,6 +36,7 @@
         _generator.getDocumentInfo().then(
             function (document) {
                 console.log("Received complete document:");
+                _document = document;
                 handle(document);
             },
             function (err) {
@@ -50,17 +54,50 @@
         return String(object);
     }
 
-    function handle(document) {
-
-        fs.writeFile("test/plugins/generatorx/sample.json", stringify(document), function (err) {
-            if(err) {
-                console.log(err);
-            } else {
-                console.log("The file was saved!");
-                psdFile = require('./sample.json');
-                // runGenerator();
-            }
+    function savePixmap(pixmap, fileName){
+        var pixels = pixmap.pixels;
+        var len = pixels.length,
+            channels = pixmap.channelCount;
+     
+        // convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
+        for(var i=0;i<len;i+=channels){
+            var a = pixels[i];
+            pixels[i]   = pixels[i+1];
+            pixels[i+1] = pixels[i+2];
+            pixels[i+2] = pixels[i+3];
+            pixels[i+3] = a;
+        }
+     
+        // init a new PNG
+        var png = new PNG({
+            width: pixmap.width,
+            height: pixmap.height
         });
+     
+        // set pixel data
+        png.data = pixmap.pixels;
+        // write to a file (will write out.png to the same directory as this *.js file
+        png.pack().pipe(fs.createWriteStream(path.resolve(__dirname, 'images/' + fileName)));
+    }
+
+    function handle(document) {
+        if (true === regenerateDocument) {
+            fs.writeFile(path.resolve(__dirname, 'sample.json'), stringify(document), function (err) {
+                if(err) {
+                    console.log(err);
+                } else {
+                    console.log("The sample.json file was saved!");
+                    start();
+                }
+            });
+        } else {
+            start();
+        }
+    }
+
+    function start() {
+        psdFile = require(path.resolve(__dirname, 'sample.json'));
+        runGenerator();
     }
 
     /**
@@ -90,43 +127,6 @@
             return value;
         }
     });
-
-    /*
-    var _document = document;
-
-    _generator.getPixmap(_document.id,_document.layers[0].id,{}).then(
-    function(pixmap){
-        savePixmap(pixmap)
-    },
-    function(err){
-        console.error("err pixmap:",err);
-    }).done();
-
-    function savePixmap(pixmap){
-        var pixels = pixmap.pixels;
-        var len = pixels.length,
-            channels = pixmap.channelCount;
-     
-        // convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
-        for(var i=0;i<len;i+=channels){
-            var a = pixels[i];
-            pixels[i]   = pixels[i+1];
-            pixels[i+1] = pixels[i+2];
-            pixels[i+2] = pixels[i+3];
-            pixels[i+3] = a;
-        }
-     
-        // init a new PNG
-        var png = new PNG({
-            width: pixmap.width,
-            height: pixmap.height
-        });
-     
-        // set pixel data
-        png.data = pixmap.pixels;
-        // write to a file (will write out.png to the same directory as this *.js file
-        png.pack().pipe(fs.createWriteStream(path.resolve(__dirname, 'out.png')));
-    } */
 
     // All sections are still layers.
     // The semantic is given by the way the interaction with the dom will occur
@@ -173,24 +173,20 @@
                         opacity: 100
                     }
                 },
-                opacity: style._get('blendOptions.opacity.value', 0) / 100,
+                opacity: style._get('blendOptions.opacity.value', 100) / 100,
                 border: {
                     color: {
                         red: style._get('layerEffects.frameFX.color.red', null),
                         green: style._get('layerEffects.frameFX.color.green', null),
                         blue: style._get('layerEffects.frameFX.color.blue', null)
                     },
-                    size: 0,
-                    radius: {
-                        topLeft: 0,
-                        topRight: 0,
-                        bottomLeft: 0,
-                        bottomRight: 0
-                    }
+                    size: 0
                 },
+                borderRadius: [],
                 zIndex: style.index,
                 color: {},
-                fontSize: 16
+                fontSize: 16,
+                fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial')
             },
             textColor;
 
@@ -235,7 +231,28 @@
 
         // TODO: Implement border
 
-        // TODO: Implement border radius
+        // Border Radius
+        switch (style._get('path.pathComponents[0].origin.type', '')) {
+            case 'roundedRect':
+                css.borderRadius = style._get('path.pathComponents[0].origin.radii', []);
+            break;
+
+            case 'ellipse':
+                // this actually requires to be transffered to an SVG
+                // ellipse implementation
+                (function () {
+                    var bounds = style._get('path.pathComponents[0].origin.bounds', {}),
+                        width = bounds.bottom - bounds.top,
+                        height = bounds.right - bounds.left;
+                    css.borderRadius[0] = height / 2;
+                }());
+            break;
+
+            default:
+                // There is no border radius.
+            break;
+        }
+        
 
         // TODO: Implement drop shadow/inner glow
 
@@ -248,7 +265,7 @@
         css.fontSize = style._get('text.textStyleRange[0].textStyle.size', 16);
         // For some reason font size comes in a different format that is 
         // roughly twice the initial px value
-        css.fontSize = (css.fontSize / 2) - ((css.fontSize * 10) / 100);
+        css.fontSize = (css.fontSize / 2) - ((css.fontSize * 20) / 100);
 
         // [TEMP] Overwrite positioning for now
         css.position = 'absolute';
@@ -299,6 +316,17 @@
 
             case 'layer':
                 this.tag = 'img';
+                if (true === regenerateImages) {
+                    _generator.getPixmap(_document.id, layer.id,{}).then(
+                        function(pixmap){
+                        savePixmap(pixmap, _this.cssName + '.png');
+                    },
+                        function(err){
+                        console.error("err pixmap:",err);
+                    }).done();
+                } else {
+                    // No regeneration is required.
+                }
             break;
 
             default: 
@@ -396,8 +424,19 @@
 
             break;
 
-            case 'opacity':
+            case 'borderRadius':
+                if (0 < value.length) {
+                    value.forEach(function (bound) {
+                        property += Math.ceil(bound) + 'px ';
+                    })
+                }
 
+                // Type: roundedRect, ellipse
+
+            break;
+
+            case 'opacity':
+                property += value;
             break;
 
             case 'color':
@@ -419,6 +458,15 @@
 
             break;
 
+            case 'fontFamily':
+                
+                property += value;
+
+                    console.log(value);
+
+
+            break;
+
             default: 
                 console.log('CSS property "' + name + '" is not regonized.');
             break;
@@ -430,6 +478,10 @@
     Layer.prototype.getCSS = function () {
         var _this = this,
             css = '';
+
+        if (false === this.visible) {
+            return '';
+        }
 
         css += '\n#' + this.cssName + ' {\n';
 
@@ -457,7 +509,12 @@
 
     Layer.prototype.getHTML = function () {
         var html = '',
-            content = '';
+            content = '',
+            attributes = '';
+
+        if (false === this.visible) {
+            return '';
+        }
 
         content += this.text;
 
@@ -465,7 +522,20 @@
             content += sibling.getHTML();
         });
 
-        html += '\n<' + this.tag + ' id="' + this.cssName + '">' + content + '</' + this.tag + '>';
+        switch (this.tag) {
+            case 'img':
+                html += '\n<' + this.tag + ' id="' + this.cssName + '" src="images/' + (this.cssName + '.png') + '" />';
+            break;
+
+            case 'div':
+                html += '\n<' + this.tag + ' id="' + this.cssName + '">' + content + '</' + this.tag + '>';
+            break;
+
+            case 'span':
+                html += '\n<' + this.tag + ' id="' + this.cssName + '">' + content + '</' + this.tag + '>';
+
+            break;
+        }
 
         return html;
     };
@@ -549,27 +619,22 @@
             }
         }
 
-        fs.writeFile(filename, JSON.stringify(this.layers, removeLinks, 4), function (err) {
-            if(err) {
-                console.log(err);
-            } else {
-                console.log('Structure.json is saved!');
-            }
-        });
+        fs.writeFileSync(filename, JSON.stringify(this.layers, removeLinks, 4));
+        console.log('Structure file was saved.');
     };
 
     Structure.prototype.output = function () {
-        fs.writeFileSync('./index.html', this.html);
-        fs.writeFileSync('./style.css', this.css);
+        fs.writeFileSync(path.resolve(__dirname, 'index.html'), this.html);
+        fs.writeFileSync(path.resolve(__dirname, 'style.css'), this.css);
+        console.log('Index.html and style.css were created.');
     };
-
 
     function runGenerator() {
         var structure = new Structure(psdFile);
         structure.parse();
         structure.link();
 
-        structure.toJSON('./structure.json');
+        structure.toJSON(path.resolve(__dirname, 'structure.json'));
         structure.refreshCode();
 
         structure.output();
