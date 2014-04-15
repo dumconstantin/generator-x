@@ -167,6 +167,32 @@
     }
 
     /**
+     * Has method
+     * Will provide a response for a chain of Object properties
+     * e.g: x.has('one.of.these.properties');
+     */
+    Object.defineProperty(Object.prototype, 'has', {
+        enumerable : false,
+        value : function(params) {
+            var tester;
+            if ('function' !== typeof params && 'string' === typeof params) {
+                try {
+                    eval('tester = this.' + params);
+                    // This eval is not evil , as long is completely secured
+                    if (undefined === tester) {
+                        throw new Error('The property ' + params + ' is not available');
+                    }
+                } catch (e) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+            return true;
+        }
+    });
+
+    /**
      * getValueOf
      * Retrieves the value of a chained Object properties
      */
