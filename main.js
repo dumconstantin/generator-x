@@ -12,8 +12,8 @@
         stylesOutput = '<style>',
         html = '',
         _document,
-        regenerateDocument = false,
-        regenerateImages = false,
+        regenerateDocument = true,
+        regenerateImages = true,
         structure = {},
         fonts = {
             'Oswald': 'oswaldbook',
@@ -159,7 +159,7 @@
             break;
 
             default:
-                console.log('The font name "' + fontName + '" is not supported.');
+                // console.log('The font name "' + fontName + '" is not supported.');
             break;
         }
 
@@ -248,6 +248,19 @@
                     },
                     size: 0
                 },
+                shadow: {
+                    active: style._get('layerEffects.dropShadow', false),
+                    color: style._get('layerEffects.dropShadow.color', {
+                        red: 0,
+                        green: 0,
+                        blue: 0
+                    }),
+                    opacity: style._get('layerEffects.dropShadow.opacity.value', 0),
+                    distance: style._get('layerEffects.dropShadow.distance', 0),
+                    blur: style._get('layerEffects.dropShadow.blue', 0),
+                    angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 90),
+                    spread: style._get('layerEffects.dropShadow.chokeMatte', 0) 
+                },
                 borderRadius: [],
                 zIndex: style.index,
                 color: {},
@@ -318,9 +331,8 @@
                 // There is no border radius.
             break;
         }
-        
 
-        // TODO: Implement drop shadow/inner glow
+        // TODO: Implement drop shadow/outer glow
 
         // TODO: Implement inner shadow/inner glow
 
@@ -328,13 +340,17 @@
         // Text styles
         css.color = style._get('text.textStyleRange[0].textStyle.color', {});
 
-        css.fontSize = style._get('text.textStyleRange[0].textStyle.size', 16);
+        css.fontSize = style._get('text.textStyleRange[0].textStyle.size', 16) / 2.5;
         // For some reason font size comes in a different format that is 
-        // roughly twice the initial px value
-        css.fontSize = (css.fontSize / 2) - ((css.fontSize * 20) / 100);
+
+        // TODO: Line height
+        // leading / font size
+        // css.lineHeight = ((style._get('text.textStyleRange[0].textStyle.leading', 16) / css.fontSize) * 1000 ) / 1000;
+
 
         // [TEMP] Overwrite positioning for now
         css.position = 'absolute';
+
 
         css.width = css.right - css.left;
         css.height = css.bottom - css.top;
@@ -357,7 +373,11 @@
         this.siblings = [];
         this.visible = layer.visible;
         this.name = layer.name;
-        this.cssName = layer.name.replace(/\s/g, '-') + '-' + getUnique();
+        this.cssName = layer.name
+            .replace(/&/, '')
+            .replace(/^\//, 'a')
+            .replace(/^[0-9]/g, 'a')
+            .replace(/\s/g, '-') + '-' + getUnique();
         this.index = layer.index;
         this.text = '';
         this.type = layer.type;
@@ -383,13 +403,20 @@
             case 'layer':
                 this.tag = 'img';
                 if (true === regenerateImages) {
-                    _generator.getPixmap(_document.id, layer.id,{}).then(
-                        function(pixmap){
-                        savePixmap(pixmap, _this.cssName + '.png');
-                    },
-                        function(err){
-                        console.error("err pixmap:",err);
-                    }).done();
+                    fs.exists(path.resolve(__dirname, 'images/' +  _this.cssName + '.png'), function (exists) {
+                        if (true === exists) {
+                            _generator.getPixmap(_document.id, layer.id,{}).then(
+                                function(pixmap){
+                                savePixmap(pixmap, _this.cssName + '.png');
+                            },
+                                function(err){
+                                console.error("err pixmap:",err);
+                            }).done();
+                        } else {
+                            // The image was already generated.
+                        }
+                    });
+
                 } else {
                     // No regeneration is required.
                 }
@@ -448,34 +475,42 @@
             break;
 
             case 'background':
-                if (0 < value.gradient.colors.length) {
 
-                    property += 'linear-gradient(';
+                // In photohop there is the case where bitmap layers have background styles applied
+                // but still keep a large portion transparent. This leads to images that cover everything 
+                // behind them.
+                if ('img' !== this.tag) {
+                    if (0 < value.gradient.colors.length) {
 
-                    if (true === value.gradient.reverse) {
-                        value.gradient.colors.reverse();
-                    }
+                        property += 'linear-gradient(';
 
-                    value.gradient.colors.forEach(function (color, index, colors) {
-                        property += 'rgba(' + Math.round(color.red) + ','
-                            + Math.round(color.green) + ',' 
-                            + Math.round(color.blue) + ', '
-                            + (value.gradient.opacity / 100).toFixed(2)
-                            + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
-
-                        if (index < colors.length - 1) {
-                            property += ', ';
+                        if (true === value.gradient.reverse) {
+                            value.gradient.colors.reverse();
                         }
-                    });
 
-                    property += ')';
+                        value.gradient.colors.forEach(function (color, index, colors) {
+                            property += 'rgba(' + Math.round(color.red) + ','
+                                + Math.round(color.green) + ',' 
+                                + Math.round(color.blue) + ', '
+                                + (value.gradient.opacity / 100).toFixed(2)
+                                + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
 
-                } else if (null !== value.color.red) {
-                    property += 'rgb('
-                        + Math.round(value.color.red) + ', '
-                        + Math.round(value.color.green) + ', '
-                        + Math.round(value.color.blue)
-                        + ')';
+                            if (index < colors.length - 1) {
+                                property += ', ';
+                            }
+                        });
+
+                        property += ')';
+
+                    } else if (null !== value.color.red) {
+                        property += 'rgb('
+                            + Math.round(value.color.red) + ', '
+                            + Math.round(value.color.green) + ', '
+                            + Math.round(value.color.blue)
+                            + ')';
+                    } else {
+                        property += 'transparent';
+                    }
                 } else {
                     property += 'transparent';
                 }
@@ -524,6 +559,16 @@
 
             break;
 
+            case 'shadow':
+                console.log(value);
+            break;
+
+            /*
+            case 'lineHeight':
+                property += Math.round(value) + 'px';
+            break;
+            */
+
             case 'fontFamily':
                 if (undefined !== fonts[value]) {
                     property += fonts[value];
@@ -554,6 +599,7 @@
         var addFont = "";
 
         Object.keys(this.css).forEach(function (property) {
+
             css += '\t' + _this.getCSSProperty(property) + ';\n'; 
             
             // Implementing certain styles require additional rules based
@@ -678,8 +724,8 @@
         this.css = "";
 
         this.layers.forEach(function (layer) {
-            _this.html = layer.getHTML();
-            _this.css = layer.getCSS();
+            _this.html += layer.getHTML();
+            _this.css += layer.getCSS();
         });
 
         this.html = this.header + this.html + this.footer;
