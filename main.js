@@ -171,7 +171,7 @@
      * Will provide a response for a chain of Object properties
      * e.g: x.has('one.of.these.properties');
      */
-    Object.defineProperty(Object.prototype, 'has', {
+    Object.defineProperty(Object.prototype, '_has', {
         enumerable : false,
         value : function(params) {
             var tester;
