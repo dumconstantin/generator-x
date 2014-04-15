@@ -252,6 +252,7 @@
                 left: style._get('bounds.left', 0),
                 position: 'static',
                 background: {
+                    active: style._has('fill'),
                     color: {
                         red: style._get('fill.color.red', null),
                         green: style._get('fill.color.green', null),
@@ -260,13 +261,16 @@
                     gradient: {
                         colors: [],
                         locations: [],
-                        reverse: false,
+                        reverse: style._get('layerEffects.gradientFill.reverse', false),
                         type: 'linear',
-                        opacity: 100
-                    }
+                        opacity: style._get('layerEffects.gradientFill.opacity.value', 100)
+                    },
+                    // Background type (linear, radial, angle)
+                    type: style._get('layerEffects.gradientFill.type', 'linear')
                 },
                 opacity: style._get('blendOptions.opacity.value', 100) / 100,
                 border: {
+                    active: style._has('layerEffects.frameFX'),
                     color: {
                         red: style._get('layerEffects.frameFX.color.red', null),
                         green: style._get('layerEffects.frameFX.color.green', null),
@@ -275,7 +279,7 @@
                     size: 0
                 },
                 shadow: {
-                    active: style._get('layerEffects.dropShadow', false),
+                    active: style._has('layerEffects.dropShadow'),
                     color: style._get('layerEffects.dropShadow.color', {
                         red: 0,
                         green: 0,
@@ -304,19 +308,10 @@
             green: style._get('layerEffects.solidFill.color.green', css.background.color.green),
             blue: style._get('layerEffects.solidFill.color.blue', css.background.color.blue)
         };
-       
-        // Background reverse (true | false)
-        css.background.gradient.reverse = style._get('layerEffects.gradientFill.reverse', false);
-
-        // Background type (linear, radial, angle)
-        css.background.type = style._get('layerEffects.gradientFill.type', 'linear');
 
         // TODO: Implement Radial Gradient
         
         // TODO: Implement Angle Gradient
-
-        // Gradient opacity
-        css.background.gradient.opacity = style._get('layerEffects.gradientFill.opacity.value', 100);
 
         // Gradient Colors
         style._get('layerEffects.gradientFill.gradient.colors', []).forEach(function (color) {
