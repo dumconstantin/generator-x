@@ -278,7 +278,7 @@
                     },
                     size: 0
                 },
-                shadow: {
+                boxShadow: {
                     active: style._has('layerEffects.dropShadow'),
                     color: style._get('layerEffects.dropShadow.color', {
                         red: 0,
@@ -580,8 +580,29 @@
 
             break;
 
-            case 'shadow':
-                console.log(value);
+            case 'boxShadow':
+                    /*
+                    active: style._has('layerEffects.dropShadow'),
+                    color: style._get('layerEffects.dropShadow.color', {
+                        red: 0,
+                        green: 0,
+                        blue: 0
+                    }),
+                    opacity: style._get('layerEffects.dropShadow.opacity.value', 0),
+                    distance: style._get('layerEffects.dropShadow.distance', 0),
+                    blur: style._get('layerEffects.dropShadow.blue', 0),
+                    angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 90),
+                    spread: style._get('layerEffects.dropShadow.chokeMatte', 0) 
+                    */
+                if (true === value.active) {
+                    property += value.distance + 'px 0px ' + value.blur + 'px'
+                    + ' rgba(' + Math.round(value.color.red) + ', '
+                    + Math.round(value.color.green) + ', '
+                    + Math.round(value.color.blue) + ', '
+                    + value.opacity + ')'
+                } else {
+                    // Not active 
+                }
             break;
 
             /*
@@ -596,7 +617,6 @@
                 } else {
                     property += value;
                 }
-
             break;
 
             default: 
@@ -621,6 +641,8 @@
 
         Object.keys(this.css).forEach(function (property) {
 
+            // TODO: Add _this.css[property].active testing before trying to create a method.
+            
             css += '\t' + _this.getCSSProperty(property) + ';\n'; 
             
             // Implementing certain styles require additional rules based
