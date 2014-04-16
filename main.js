@@ -339,7 +339,8 @@
                         locations: [],
                         reverse: style._get('layerEffects.gradientFill.reverse', false),
                         type: 'linear',
-                        opacity: style._get('layerEffects.gradientFill.opacity.value', 100)
+                        opacity: style._get('layerEffects.gradientFill.opacity.value', 100),
+                        angle: style._get('layerEffects.gradientFill.angle.value', -90)
                     },
                     // Background type (linear, radial, angle)
                     type: style._get('layerEffects.gradientFill.type', 'linear')
@@ -636,8 +637,11 @@
                                 value.gradient.colors.reverse();
                             }
 
+                            property += Math.abs(value.gradient.angle + 90) + 'deg, ';
+
                             value.gradient.colors.forEach(function (color, index, colors) {
-                                property += 'rgba(' + Math.round(color.red) + ','
+                                property += 'rgba(' 
+                                    + Math.round(color.red) + ','
                                     + Math.round(color.green) + ',' 
                                     + Math.round(color.blue) + ', '
                                     + (value.gradient.opacity / 100).toFixed(2)
