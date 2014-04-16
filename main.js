@@ -287,8 +287,9 @@
                     }),
                     opacity: style._get('layerEffects.dropShadow.opacity.value', 0),
                     distance: style._get('layerEffects.dropShadow.distance', 0),
-                    blur: style._get('layerEffects.dropShadow.blue', 0),
-                    angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 90),
+                    blur: style._get('layerEffects.dropShadow.blur', 0),
+                    // TODO: Add global lighting angle
+                    angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 120),
                     spread: style._get('layerEffects.dropShadow.chokeMatte', 0) 
                 },
                 borderRadius: [],
@@ -353,7 +354,7 @@
             break;
         }
 
-        // TODO: Implement drop shadow/outer glow
+        // TODO: Implement outer glow
 
         // TODO: Implement inner shadow/inner glow
 
@@ -581,25 +582,40 @@
             break;
 
             case 'boxShadow':
-                    /*
-                    active: style._has('layerEffects.dropShadow'),
-                    color: style._get('layerEffects.dropShadow.color', {
-                        red: 0,
-                        green: 0,
-                        blue: 0
-                    }),
-                    opacity: style._get('layerEffects.dropShadow.opacity.value', 0),
-                    distance: style._get('layerEffects.dropShadow.distance', 0),
-                    blur: style._get('layerEffects.dropShadow.blue', 0),
-                    angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 90),
-                    spread: style._get('layerEffects.dropShadow.chokeMatte', 0) 
-                    */
+
                 if (true === value.active) {
-                    property += value.distance + 'px 0px ' + value.blur + 'px'
-                    + ' rgba(' + Math.round(value.color.red) + ', '
-                    + Math.round(value.color.green) + ', '
-                    + Math.round(value.color.blue) + ', '
-                    + value.opacity + ')'
+                    (function () {
+                        var angle = 0 < value.angle ? value.angle : 360 + value.angle,
+                            // 91 is so that the substraction does not result in 0;
+                            normalisedAngle = angle - 90 * Math.floor(angle / 91),
+                            x,
+                            y,
+                            percent; 
+
+                        // TODO: Accomodate for the chokeMatte property
+
+                        percent = normalisedAngle / 90;
+                        if (angle <= 90) {
+                            x = - (value.distance - value.distance * percent);
+                            y = value.distance * percent;
+                        } else if (angle <= 180) {
+                            x = value.distance * percent;
+                            y = value.distance - value.distance * percent;
+                        } else if (angle <= 270) {
+                            x = value.distance - value.distance * percent;
+                            y = - value.distance * percent;
+                        } else if (angle <= 360) {
+                            x = - (value.distance * percent);
+                            y = - (value.distance - value.distance * percent);
+                        }
+
+                        property += Math.round(x) + 'px ' + Math.round(y) + 'px ' 
+                        + value.blur + 'px '
+                        + ' rgba(' + Math.round(value.color.red) + ', '
+                        + Math.round(value.color.green) + ', '
+                        + Math.round(value.color.blue) + ', '
+                        + (value.opacity / 100) + ')';
+                    }());
                 } else {
                     // Not active 
                 }
