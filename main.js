@@ -264,7 +264,7 @@
                 x = - (shadow.distance * percent);
                 y = - (shadow.distance - shadow.distance * percent);
             }
-            
+
         } else {
             x = 0;
             y = 0;
@@ -412,6 +412,7 @@
                 zIndex: style.index,
                 color: {},
                 fontSize: 16,
+                textAlign: style._get('text.paragraphStyleRange[0].paragraphStyle.align', 'none'),
                 fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial')
             },
             textColor;
@@ -615,43 +616,48 @@
 
             case 'background':
 
-                // In photohop there is the case where bitmap layers have background styles applied
-                // but still keep a large portion transparent. This leads to images that cover everything 
-                // behind them.
-                if ('img' !== this.tag) {
-                    if (0 < value.gradient.colors.length) {
+                if (true === value.active) {
 
-                        property += 'linear-gradient(';
+                    // In photohop there is the case where bitmap layers have background styles applied
+                    // but still keep a large portion transparent. This leads to images that cover everything 
+                    // behind them.
+                    if ('img' !== this.tag) {
+                        if (0 < value.gradient.colors.length) {
 
-                        if (true === value.gradient.reverse) {
-                            value.gradient.colors.reverse();
-                        }
+                            property += 'linear-gradient(';
 
-                        value.gradient.colors.forEach(function (color, index, colors) {
-                            property += 'rgba(' + Math.round(color.red) + ','
-                                + Math.round(color.green) + ',' 
-                                + Math.round(color.blue) + ', '
-                                + (value.gradient.opacity / 100).toFixed(2)
-                                + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
-
-                            if (index < colors.length - 1) {
-                                property += ', ';
+                            if (true === value.gradient.reverse) {
+                                value.gradient.colors.reverse();
                             }
-                        });
 
-                        property += ')';
+                            value.gradient.colors.forEach(function (color, index, colors) {
+                                property += 'rgba(' + Math.round(color.red) + ','
+                                    + Math.round(color.green) + ',' 
+                                    + Math.round(color.blue) + ', '
+                                    + (value.gradient.opacity / 100).toFixed(2)
+                                    + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
 
-                    } else if (null !== value.color.red) {
-                        property += 'rgb('
-                            + Math.round(value.color.red) + ', '
-                            + Math.round(value.color.green) + ', '
-                            + Math.round(value.color.blue)
-                            + ')';
+                                if (index < colors.length - 1) {
+                                    property += ', ';
+                                }
+                            });
+
+                            property += ')';
+
+                        } else if (null !== value.color.red) {
+                            property += 'rgb('
+                                + Math.round(value.color.red) + ', '
+                                + Math.round(value.color.green) + ', '
+                                + Math.round(value.color.blue)
+                                + ')';
+                        } else {
+                            property += 'transparent';
+                        }
                     } else {
                         property += 'transparent';
                     }
                 } else {
-                    property += 'transparent';
+                    // The background is not active.
                 }
 
             break;
@@ -668,7 +674,8 @@
                 if (0 < value.length) {
                     value.forEach(function (bound) {
                         property += Math.ceil(bound) + 'px ';
-                    })
+                        after += Math.ceil(bound) + 'px ';
+                    });
                 }
 
                 // Type: roundedRect, ellipse
@@ -698,6 +705,12 @@
 
             break;
 
+            case 'textAlign':
+
+                property += value;
+
+            break;
+
             case 'boxShadow':
 
                 if (true === value.active) {
@@ -706,7 +719,6 @@
                             property = 'text-shadow: ';
                         }
 
-                        console.log(value);
                         ['outerGlow', 'innerGlow'].forEach(function (glowType) {
                             if (true === value[glowType].active) {
                                 after += createBoxShadow(value, glowType, _this.type);
@@ -772,7 +784,11 @@
             css += '\t' + parsedCSS.property + ';\n';
 
             if ('' !== parsedCSS.after) {
-                after += '\t' + _this.getCSSName(property) + ': ' + parsedCSS.after + ';\n';
+                if ('boxShadow' === property && 'textLayer' === _this.type) {
+                    after += '\ttext-shadow: ' + parsedCSS.after + ';\n';
+                } else {
+                    after += '\t' + _this.getCSSName(property) + ': ' + parsedCSS.after + ';\n';
+                }
             }
             
             // Implementing certain styles require additional rules based
@@ -796,11 +812,20 @@
         css += getCSSFontFamily(addFont);
 
         if ("" !== after) {
-            css += '\n#' + this.cssName + '::after {\n';
-            css += '\tcontent: "";\n';
+            css += '\n#' + this.cssName + '::before {\n';
+            
+            if ('' !== this.text) {
+                css += '\tcontent: "' + this.text.replace(/[\s]+/g, ' ') + '";\n';
+            } else {
+                css += '\tcontent: "";\n';
+            }
+
             css += '\tdisplay: block;\n';
             css += '\twidth: 100%;\n';
             css += '\theight: 100%;\n';
+            css += '\tposition: absolute;\n';
+            css += '\ttop: 0;\n';
+            css += '\tleft: 0;\n';
             css += after;
             css += '}\n';
         }
