@@ -17,11 +17,69 @@
         structure = {},
         fonts = {
             'Oswald': 'oswaldbook',
-            'IcoMoon': 'icomoonregular'
+            'IcoMoon': 'icomoonregular',
+            'Roboto': 'robotoregular'
         };
+    /**
+     * Has method
+     * Will provide a response for a chain of Object properties
+     * e.g: x.has('one.of.these.properties');
+     */
+    Object.defineProperty(Object.prototype, '_has', {
+        enumerable : false,
+        value : function(params) {
+            var tester;
+            if ('function' !== typeof params && 'string' === typeof params) {
+                try {
+                    eval('tester = this.' + params);
+                    // This eval is not evil , as long is completely secured
+                    if (undefined === tester) {
+                        throw new Error('The property ' + params + ' is not available');
+                    }
+                } catch (e) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+            return true;
+        }
+    });
 
+    /**
+     * getValueOf
+     * Retrieves the value of a chained Object properties
+     */
+    Object.defineProperty(Object.prototype, '_get', {
+        enumerable : false,
+        value : function(params, fallback) {
+            var value;
+            if ('function' !== typeof params && 'string' === typeof params) {
+
+                try {
+                    eval('value = this.' + params.toString());
+                    if (undefined === value) {
+                        throw new Error('not available');
+                    }
+                } catch (e) {
+                    if (undefined !== fallback) {
+                        return fallback;
+                    }
+                    return undefined;
+                }
+            } else {
+                return false;
+            }
+            return value;
+        }
+    });
 
     function init(generator) {
+
+        if (false === regenerateDocument) {
+            return;
+        }
+
         _generator = generator;
 
         var menuText = "Error: version property not present";
@@ -44,7 +102,7 @@
                 handle(document);
             },
             function (err) {
-                console.error("[Tutorial] Error in getDocumentInfo:", err);
+                console.error(" Error in getDocumentInfo:", err);
             }
         ).done();    
     }
@@ -158,6 +216,19 @@
 
             break;
 
+            case 'Roboto':
+                font += "@font-face {"
+                    + "font-family: 'robotoregular'; "
+                    + " src: url('fonts/roboto-regular.eot'); "
+                    + " src: url('fonts/roboto-regular.eot?#iefix') format('embedded-opentype')," 
+                    + "     url('fonts/roboto-regular.woff') format('woff'),"
+                    + "    url('fonts/roboto-regular.ttf') format('truetype'),"
+                    + "    url('fonts/roboto-regular.svg#robotoregular') format('svg');"
+                    + "font-weight: normal;"
+                    + "font-style: normal;"
+                    + "}";
+            break;
+
             default:
                 // console.log('The font name "' + fontName + '" is not supported.');
             break;
@@ -166,59 +237,61 @@
         return font;
     }
 
-    /**
-     * Has method
-     * Will provide a response for a chain of Object properties
-     * e.g: x.has('one.of.these.properties');
-     */
-    Object.defineProperty(Object.prototype, '_has', {
-        enumerable : false,
-        value : function(params) {
-            var tester;
-            if ('function' !== typeof params && 'string' === typeof params) {
-                try {
-                    eval('tester = this.' + params);
-                    // This eval is not evil , as long is completely secured
-                    if (undefined === tester) {
-                        throw new Error('The property ' + params + ' is not available');
-                    }
-                } catch (e) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-            return true;
-        }
-    });
+    function createBoxShadow(shadowStyles, shadowType, elementType) {
+        var property = "",
+            shadow = shadowStyles[shadowType],
+            angle = 0 < shadow.angle ? shadow.angle : 360 + shadow.angle,
+            // 91 is so that the substraction does not result in 0;
+            normalisedAngle = angle - 90 * Math.floor(angle / 91),
+            x,
+            y,
+            percent; 
 
-    /**
-     * getValueOf
-     * Retrieves the value of a chained Object properties
-     */
-    Object.defineProperty(Object.prototype, '_get', {
-        enumerable : false,
-        value : function(params, fallback) {
-            var value;
-            if ('function' !== typeof params && 'string' === typeof params) {
-
-                try {
-                    eval('value = this.' + params.toString());
-                    if (undefined === value) {
-                        throw new Error('not available');
-                    }
-                } catch (e) {
-                    if (undefined !== fallback) {
-                        return fallback;
-                    }
-                    return undefined;
-                }
-            } else {
-                return false;
+        if (-1 === ['outerGlow', 'innerGlow'].indexOf(shadowType)) {
+            
+            // TODO: Accomodate for the chokeMatte property
+            percent = normalisedAngle / 90;
+            if (angle <= 90) {
+                x = - (shadow.distance - shadow.distance * percent);
+                y = shadow.distance * percent;
+            } else if (angle <= 180) {
+                x = shadow.distance * percent;
+                y = shadow.distance - shadow.distance * percent;
+            } else if (angle <= 270) {
+                x = shadow.distance - shadow.distance * percent;
+                y = - shadow.distance * percent;
+            } else if (angle <= 360) {
+                x = - (shadow.distance * percent);
+                y = - (shadow.distance - shadow.distance * percent);
             }
-            return value;
+            
+        } else {
+            x = 0;
+            y = 0;
         }
-    });
+
+        if (true === shadowStyles.outer.active && 'inset' === shadowType) {
+            property += ', ';
+        }
+
+        if (true === shadowStyles.outerGlow.active && 'innerGlow' === shadowType) {
+            property += ', ';
+        }
+
+        property += Math.round(x) + 'px ' + Math.round(y) + 'px ' 
+        + shadow.blur + 'px '
+        + ' rgba(' + Math.round(shadow.color.red) + ', '
+        + Math.round(shadow.color.green) + ', '
+        + Math.round(shadow.color.blue) + ', '
+        + (shadow.opacity / 100) + ')';
+
+        if (('inset' === shadowType || 'innerGlow' === shadowType) 
+            && 'textLayer' !== elementType) {
+            property += ' inset';
+        }
+
+        return property;
+    }
 
     // All sections are still layers.
     // The semantic is given by the way the interaction with the dom will occur
@@ -245,6 +318,9 @@
 
 
     function parseCSS(style) {
+
+        // TODO: Add default styles for all the bellow properties.
+
         var css = {
                 top: style._get('bounds.top', 0),
                 right: style._get('bounds.right', 0),
@@ -254,9 +330,9 @@
                 background: {
                     active: style._has('fill'),
                     color: {
-                        red: style._get('fill.color.red', null),
-                        green: style._get('fill.color.green', null),
-                        blue: style._get('fill.color.blue', null)
+                        red: style._get('fill.color.red', 255),
+                        green: style._get('fill.color.green', 255),
+                        blue: style._get('fill.color.blue', 255)
                     },
                     gradient: {
                         colors: [],
@@ -272,25 +348,65 @@
                 border: {
                     active: style._has('layerEffects.frameFX'),
                     color: {
-                        red: style._get('layerEffects.frameFX.color.red', null),
-                        green: style._get('layerEffects.frameFX.color.green', null),
-                        blue: style._get('layerEffects.frameFX.color.blue', null)
+                        red: style._get('layerEffects.frameFX.color.red', 255),
+                        green: style._get('layerEffects.frameFX.color.green', 255),
+                        blue: style._get('layerEffects.frameFX.color.blue', 255)
                     },
                     size: 0
                 },
                 boxShadow: {
-                    active: style._has('layerEffects.dropShadow'),
-                    color: style._get('layerEffects.dropShadow.color', {
-                        red: 0,
-                        green: 0,
-                        blue: 0
-                    }),
-                    opacity: style._get('layerEffects.dropShadow.opacity.value', 0),
-                    distance: style._get('layerEffects.dropShadow.distance', 0),
-                    blur: style._get('layerEffects.dropShadow.blur', 0),
-                    // TODO: Add global lighting angle
-                    angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 120),
-                    spread: style._get('layerEffects.dropShadow.chokeMatte', 0) 
+                    active: style._has('layerEffects.dropShadow')  
+                        || style._has('layerEffects.innerShadow')
+                        || style._has('layerEffects.outerGlow')
+                        || style._has('layerEffects.innerGlow'),
+                    outer: {
+                        active: style._has('layerEffects.dropShadow'),
+                        color: {
+                            red: style._get('layerEffects.dropShadow.color.red', 0),
+                            green: style._get('layerEffects.dropShadow.color.green', 0),
+                            blue: style._get('layerEffects.dropShadow.color.blue', 0)
+                        },
+                        opacity: style._get('layerEffects.dropShadow.opacity.value', 100),
+                        distance: style._get('layerEffects.dropShadow.distance', 0),
+                        blur: style._get('layerEffects.dropShadow.blur', 0),
+                        // TODO: Add global lighting angle
+                        angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 120),
+                        spread: style._get('layerEffects.dropShadow.chokeMatte', 0) 
+                    },
+                    inset: {
+                        active: style._has('layerEffects.innerShadow'),
+                        color: {
+                            red: style._get('layerEffects.innerShadow.color.red', 0),
+                            green: style._get('layerEffects.innerShadow.color.green', 0),
+                            blue: style._get('layerEffects.innerShadow.color.blue', 0)
+                        },
+                        opacity: style._get('layerEffects.innerShadow.opacity.value', 1),
+                        distance: style._get('layerEffects.innerShadow.distance', 0),
+                        blur: style._get('layerEffects.innerShadow.blur', 0),
+                        // TODO: Add global lighting angle
+                        angle: style._get('layerEffects.innerShadow.localLightingAngle.value', 120),
+                        spread: style._get('layerEffects.innerShadow.chokeMatte', 0) 
+                    },
+                    outerGlow: {
+                        active: style._has('layerEffects.outerGlow'),
+                        color: {
+                            red: style._get('layerEffects.outerGlow.color.red', 0),
+                            green: style._get('layerEffects.outerGlow.color.green', 0),
+                            blue: style._get('layerEffects.outerGlow.color.blue', 0),
+                        },
+                        blur: style._get('layerEffects.outerGlow.blur', 0),
+                        opacity: style._get('layerEffects.outerGlow.opacity.value', 100)
+                    },
+                    innerGlow: {
+                        active: style._has('layerEffects.innerGlow'),
+                        color: {
+                            red: style._get('layerEffects.innerGlow.color.red', 0),
+                            green: style._get('layerEffects.innerGlow.color.green', 0),
+                            blue: style._get('layerEffects.innerGlow.color.blue', 0),
+                        },
+                        blur: style._get('layerEffects.innerGlow.blur'),
+                        opacity: style._get('layerEffects.innerGlow.opacity.value', 100)
+                    }
                 },
                 borderRadius: [],
                 zIndex: style.index,
@@ -462,10 +578,11 @@
         return name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
     };
 
-
     Layer.prototype.getCSSProperty = function (name) {
         var property = this.getCSSName(name) + ': ',
-            value = this.css[name];
+            after = "",
+            value = this.css[name],
+            _this = this;
 
         switch (name) {
             case 'top':
@@ -584,38 +701,25 @@
             case 'boxShadow':
 
                 if (true === value.active) {
-                    (function () {
-                        var angle = 0 < value.angle ? value.angle : 360 + value.angle,
-                            // 91 is so that the substraction does not result in 0;
-                            normalisedAngle = angle - 90 * Math.floor(angle / 91),
-                            x,
-                            y,
-                            percent; 
-
-                        // TODO: Accomodate for the chokeMatte property
-
-                        percent = normalisedAngle / 90;
-                        if (angle <= 90) {
-                            x = - (value.distance - value.distance * percent);
-                            y = value.distance * percent;
-                        } else if (angle <= 180) {
-                            x = value.distance * percent;
-                            y = value.distance - value.distance * percent;
-                        } else if (angle <= 270) {
-                            x = value.distance - value.distance * percent;
-                            y = - value.distance * percent;
-                        } else if (angle <= 360) {
-                            x = - (value.distance * percent);
-                            y = - (value.distance - value.distance * percent);
+                        
+                        if ('textLayer' === _this.type) {
+                            property = 'text-shadow: ';
                         }
 
-                        property += Math.round(x) + 'px ' + Math.round(y) + 'px ' 
-                        + value.blur + 'px '
-                        + ' rgba(' + Math.round(value.color.red) + ', '
-                        + Math.round(value.color.green) + ', '
-                        + Math.round(value.color.blue) + ', '
-                        + (value.opacity / 100) + ')';
-                    }());
+                        console.log(value);
+                        ['outerGlow', 'innerGlow'].forEach(function (glowType) {
+                            if (true === value[glowType].active) {
+                                after += createBoxShadow(value, glowType, _this.type);
+                            }
+                        });
+
+
+                        ['outer', 'inset'].forEach(function (shadowType) {
+                            if (true === value[shadowType].active) {
+                                property += createBoxShadow(value, shadowType, _this.type);
+                            }
+                        });
+
                 } else {
                     // Not active 
                 }
@@ -640,12 +744,17 @@
             break;
         }
 
-        return property;
+        return {
+            property: property,
+            after: after
+        };
     };
 
     Layer.prototype.getCSS = function () {
         var _this = this,
-            css = '';
+            css = '',
+            addFont = '',
+            after = '';
 
         if (false === this.visible) {
             return '';
@@ -653,13 +762,18 @@
 
         css += '\n#' + this.cssName + ' {\n';
 
-        var addFont = "";
-
         Object.keys(this.css).forEach(function (property) {
+            var parsedCSS = _this.getCSSProperty(property);
+            // TODO: Add outer glow as an after element.
+
 
             // TODO: Add _this.css[property].active testing before trying to create a method.
-            
-            css += '\t' + _this.getCSSProperty(property) + ';\n'; 
+
+            css += '\t' + parsedCSS.property + ';\n';
+
+            if ('' !== parsedCSS.after) {
+                after += '\t' + _this.getCSSName(property) + ': ' + parsedCSS.after + ';\n';
+            }
             
             // Implementing certain styles require additional rules based
             // on the type of the element and the property being styled
@@ -680,6 +794,16 @@
         css += '}';
 
         css += getCSSFontFamily(addFont);
+
+        if ("" !== after) {
+            css += '\n#' + this.cssName + '::after {\n';
+            css += '\tcontent: "";\n';
+            css += '\tdisplay: block;\n';
+            css += '\twidth: 100%;\n';
+            css += '\theight: 100%;\n';
+            css += after;
+            css += '}\n';
+        }
 
         this.siblings.forEach(function (sibling) {
             css += sibling.getCSS();
