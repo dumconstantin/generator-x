@@ -532,6 +532,11 @@
 
             case 'shapeLayer':
                 this.tag = 'div';
+
+                if ('unknown' === layer._get('path.pathComponents[0].origin.type', 'shapeLayer')) {
+                    this.tag = 'img';
+                }
+
             break;
 
             case 'textLayer':
@@ -541,29 +546,30 @@
 
             case 'layer':
                 this.tag = 'img';
-                if (true === regenerateImages) {
-                    fs.exists(path.resolve(__dirname, 'images/' +  _this.cssName + '.png'), function (exists) {
-                        if (true === exists) {
-                            _generator.getPixmap(_document.id, layer.id,{}).then(
-                                function(pixmap){
-                                savePixmap(pixmap, _this.cssName + '.png');
-                            },
-                                function(err){
-                                console.error("err pixmap:",err);
-                            }).done();
-                        } else {
-                            // The image was already generated.
-                        }
-                    });
-
-                } else {
-                    // No regeneration is required.
-                }
             break;
 
             default: 
                 console.log('The layer type "' + layer.type + '" is no recognised.');
             break;
+        }
+
+        if (true === regenerateImages && 'img' === this.tag) {
+            fs.exists(path.resolve(__dirname, 'images/' +  _this.cssName + '.png'), function (exists) {
+                if (false === exists) {
+                    _generator.getPixmap(_document.id, layer.id,{}).then(
+                        function(pixmap){
+                        savePixmap(pixmap, _this.cssName + '.png');
+                    },
+                        function(err){
+                        console.error("err pixmap:",err);
+                    }).done();
+                } else {
+                    // The image was already generated.
+                }
+            });
+
+        } else {
+            // No regeneration is required.
         }
 
         // Parse children layers.
