@@ -465,25 +465,13 @@
             break;
         }
 
-        // TODO: Implement outer glow
+        // [TEMP] Default dimensions.
+        if ('textLayer' !== style.type) {
+            
+            css.width = css.right - css.left;
+            css.height = css.bottom - css.top;
 
-        // TODO: Implement inner shadow/inner glow
-
-        // ---------
-        // Text styles
-
-
-        // For some reason font size comes in a different format that is 
-
-        // TODO: Line height
-        // leading / font size
-        // css.lineHeight = ((style._get('text.textStyleRange[0].textStyle.leading', 16) / css.fontSize) * 1000 ) / 1000;
-
-
-        // [TEMP] Overwrite positioning for now
-        css.position = 'absolute';
-
-        if ('textLayer' === style.type) {
+        } else {
 
             // Regardless of the outcome of the next calculations
             // the textLayer should not have a width/height set.
@@ -500,6 +488,7 @@
                 var bounds = style._get('text.bounds'),
                     boxBounds = style._get('text.boundingBox'),
                     boundsWidth = bounds.right - bounds.left,
+                    boundsHeight = bounds.bottom - bounds.top,
                     boxBoundsWidth = boxBounds.right - boxBounds.left,
                     boxWidthDifference = boxBoundsWidth - boundsWidth;
 
@@ -518,15 +507,32 @@
                 } else {
                     // The text has a defined area and needs to be further
                     // wrapped in a parent container element.
+
+                    css.width = boundsWidth;
+                    css.height = boundsHeight;
                     
                 }
 
             }());
-
-        } else {
-            css.width = css.right - css.left;
-            css.height = css.bottom - css.top;
         }
+
+
+        // [TEMP] Overwrite positioning for now
+        css.position = 'absolute';
+
+        // TODO: Implement outer glow
+
+        // TODO: Implement inner shadow/inner glow
+
+        // ---------
+        // Text styles
+
+
+        // For some reason font size comes in a different format that is 
+
+        // TODO: Line height
+        // leading / font size
+        // css.lineHeight = ((style._get('text.textStyleRange[0].textStyle.leading', 16) / css.fontSize) * 1000 ) / 1000;
 
         //
         // Overwrites
@@ -572,7 +578,8 @@
     }());
 
     function Layer(structure, layer) {
-        var _this = this;
+        var _this = this,
+            parsedCSS;
 
         this.id = layer.id;
         this.siblings = [];
@@ -584,7 +591,9 @@
 
         this.structure = structure;
 
-        // Presumed css styles
+        // Raw css styles. 
+        // This are similar to a "computed" style. Will include
+        // all element styles which then can be further optimised.
         this.css = parseCSS(layer);
 
         // Layer type specific configuration
