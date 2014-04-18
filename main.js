@@ -552,11 +552,6 @@
         this.siblings = [];
         this.visible = layer.visible;
         this.name = layer.name;
-        this.cssName = layer.name
-            .replace(/&/, '')
-            .replace(/^\//, 'a')
-            .replace(/^[0-9]/g, 'a')
-            .replace(/\s/g, '-') + '-' + getUnique();
         this.index = layer.index;
         this.text = '';
         this.type = layer.type;
@@ -894,7 +889,7 @@
             return '';
         }
 
-        css += '\n#' + this.cssName + ' {\n';
+        css += '\n#' + this.cssId + ' {\n';
 
         Object.keys(this.css).forEach(function (property) {
             var parsedCSS = _this.getCSSProperty(property);
@@ -934,7 +929,7 @@
         css += getCSSFontFamily(addFont);
 
         if ("" !== after) {
-            css += '\n#' + this.cssName + '::before {\n';
+            css += '\n#' + this.cssId + '::before {\n';
             
             if ('' !== this.text) {
                 css += '\tcontent: "' + this.text.replace(/[\s]+/g, ' ') + '";\n';
@@ -976,15 +971,15 @@
 
         switch (this.tag) {
             case 'img':
-                html += '\n<' + this.tag + ' id="' + this.cssName + '" src="' + this.structure.folders.images + this.fileName + '" />';
+                html += '\n<' + this.tag + ' id="' + this.cssId + '" src="' + this.structure.folders.images + this.fileName + '" />';
             break;
 
             case 'div':
-                html += '\n<' + this.tag + ' id="' + this.cssName + '">' + content + '</' + this.tag + '>';
+                html += '\n<' + this.tag + ' id="' + this.cssId + '">' + content + '</' + this.tag + '>';
             break;
 
             case 'span':
-                html += '\n<' + this.tag + ' id="' + this.cssName + '">' + content + '</' + this.tag + '>';
+                html += '\n<' + this.tag + ' id="' + this.cssId + '">' + content + '</' + this.tag + '>';
 
             break;
         }
@@ -1012,11 +1007,15 @@
         this.psdPath = this.document.file;
         this.psdName = this.psdPath.substr(this.psdPath.lastIndexOf('/') + 1, this.psdPath.length);
 
+        // Store IDs to ensure there is no collision between styles.
+        this.cssIds = [];
+
+
         // This is the top most parent of the document. 
         // Catch all traversal that arrive here.
         this.parent = {
             css: parseCSS({}),
-            cssName: 'global',
+            cssId: 'global',
         };
 
         this.header = '<!DOCTYPE html>' +
@@ -1107,7 +1106,7 @@
                     // TODO: Add a layer hashsum at the end of the layer to ensure that
                     // if the layer has changed then the image should be regenerated as well.
                     
-                    layer.fileName = _this.psdName + '_' + layer.parent.cssName + '_' + layer.cssName + '.png';
+                    layer.fileName = _this.psdName + '_' + layer.parent.cssId + '_' + layer.cssId + '.png';
                     layer.filePath = _this.folders.images + layer.fileName;
 
                     if (true === fs.existsSync(layer.filePath)) {
@@ -1139,6 +1138,35 @@
         regenerateImages(this.layers);
     };
 
+    Structure.prototype.generateCssIds = function () {
+        var _this = this;
+
+        function generateCssIds(layers) {
+
+            layers.forEach(function (layer, index) {
+
+                layer.cssId = layer.parent.cssId + '-'
+                    + layer.name
+                        .replace(/&/, '')
+                        .replace(/^\//, 'a')
+                        .replace(/^[0-9]/g, 'a')
+                        .replace(/\s/g, '-');
+
+                if (-1 === _this.cssIds.indexOf(layer.cssId)) {
+                    // The ID is unique and can be used.
+                } else {
+                    layer.cssId += index;
+                }
+
+                if (0 < layer.siblings.length) {
+                    generateCssIds(layer.siblings);
+                }
+            });
+        }
+
+        generateCssIds(this.layers);
+    };
+
     function runGenerator(document, generator) {
         var structure = new Structure({
             folders: {
@@ -1152,10 +1180,11 @@
             },
             document: document,
             generator: generator
-        });
+        });        
 
         structure.parse();
         structure.link();
+        structure.generateCssIds();
         structure.regenerateImages();
 
         structure.saveToJSON();
