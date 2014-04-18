@@ -406,8 +406,10 @@
                 zIndex: style.index,
                 color: style._get('text.textStyleRange[0].textStyle.color', {}),
                 fontSize: style._get('text.textStyleRange[0].textStyle.size', 16),
-                textAlign: style._get('text.paragraphStyleRange[0].paragraphStyle.align', 'none'),
-                fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial')
+                textAlign: style._get('text.paragraphStyleRange[0].paragraphStyle.align', 'inherit'),
+                fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial'),
+                fontWeight: style._get('text.textStyleRange[0].textStyle.syntheticBold', false),
+                fontStyle: style._get('text.textStyleRange[0].textStyle.syntheticItalic', false)
             },
             textColor;
 
@@ -465,17 +467,27 @@
             break;
         }
 
+
         // [TEMP] Default dimensions.
-        if ('textLayer' !== style.type) {
+        css.width = css.right - css.left;
+        css.height = css.bottom - css.top;
+
+
+        if ('textLayer' === style.type) {
             
-            css.width = css.right - css.left;
-            css.height = css.bottom - css.top;
+            // TODO: Implement the WebKit algorithm to detect the real width of the 
+            // text with all the styles attached. 
+            // This should do the following:
+            // 1. Parse the .ttf file
+            // 2. Create the sequence of text vectors dictated by the .ttf rules
+            // of binding characters
+            // 3. Add the text transformation on the created sequence of vectors
+            // 4. Extract the width pixel value from the vector implementation in 
+            // bitmap environment.
 
-        } else {
-
-            // Regardless of the outcome of the next calculations
-            // the textLayer should not have a width/height set.
-            css.width = 'auto';
+            // TODO: Adjust the estimated 10px that seems to accomodate
+            // the difference between PSD and Browser text rendering.
+            css.width = css.width + 10;
             css.height = 'auto';
 
             // Definitions:
@@ -504,6 +516,7 @@
                     // The text does not have a defined area and an be left 
                     // to be arranged through the alignment styles of the parent
                     // element.
+                    css.textAlign = 'left';
                 } else {
                     // The text has a defined area and needs to be further
                     // wrapped in a parent container element.
@@ -856,6 +869,26 @@
             case 'textAlign':
 
                 property += value;
+
+            break;
+
+            case 'fontWeight':
+
+                if (true === value) {
+                    property += 'bold';
+                } else {
+                    property += 'normal';
+                }
+
+            break;
+
+            case 'fontStyle':
+
+                if (true === value) {
+                    property += 'italic';
+                } else {
+                    property += 'normal';
+                }
 
             break;
 
