@@ -309,8 +309,7 @@
 
         // TODO: Add default styles for all the bellow properties.
 
-        var _this = this,
-            css = {
+        var css = {
                 top: style._get('bounds.top', 0),
                 right: style._get('bounds.right', 0),
                 bottom: style._get('bounds.bottom', 0),
@@ -484,19 +483,46 @@
         // [TEMP] Overwrite positioning for now
         css.position = 'absolute';
 
-
         if ('textLayer' === style.type) {
-            if (true === style._has('text.textShape.bounds')) {
-                (function () {
-                    var boundingBox = style._get('text.textShape.bounds') ;
-                    // 2 seems make up for the difference between PS and web
-                    css.width = Math.ceil(css.right - css.left);
-                    css.height = Math.floor(css.bottom - css.top);
-                }());
-            } else {
-                css.width = 'auto';
-                css.height = 'auto';
-            }
+
+            // Regardless of the outcome of the next calculations
+            // the textLayer should not have a width/height set.
+            css.width = 'auto';
+            css.height = 'auto';
+
+            // Definitions:
+            // boundingBox: the coordinates that wrap the text
+            // bounds: the coordinates that wrap the user defined area for the text or 
+            //      if the area wasn't defined by the user, the total area occupied 
+            //      by the text which might be different than the boundingBox coordinates
+            
+            (function () {
+                var bounds = style._get('text.bounds'),
+                    boxBounds = style._get('text.boundingBox'),
+                    boundsWidth = bounds.right - bounds.left,
+                    boxBoundsWidth = boxBounds.right - boxBounds.left,
+                    boxWidthDifference = boxBoundsWidth - boundsWidth;
+
+                // From inital experimentation the difference between the bounds
+                // when not having a user defined area is within a 10 px range.
+                // Of course, this is empiric evidence and needs further research.
+                // Also, an area that is less than 10 px from the area occupied
+                // by the text leaves little room for alignment (which is in fact
+                // the goal of this). If the desiner did create a less than 10 px
+                // container for the text then this might be a bad practice to do
+                // so.
+                if (10 > Math.abs(boxWidthDifference)) {
+                    // The text does not have a defined area and an be left 
+                    // to be arranged through the alignment styles of the parent
+                    // element.
+                } else {
+                    // The text has a defined area and needs to be further
+                    // wrapped in a parent container element.
+                    
+                }
+
+            }());
+
         } else {
             css.width = css.right - css.left;
             css.height = css.bottom - css.top;
