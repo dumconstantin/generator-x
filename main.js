@@ -74,92 +74,80 @@
         }
     });
 
+    // TODO: Create a test suite generator to get the GenX File and generate also images
+    // Which will be shown on the same page as a left and right comparison.
+
     function init(generator) {
+        
+        generator.getDocumentInfo().then(
 
-        if (false === regenerateDocument) {
-            return;
-        }
-
-        _generator = generator;
-
-        var menuText = "Error: version property not present";
-
-        if (_generator.version) {
-            menuText = "Generator Core version: " + _generator.version;
-        }
-
-        _generator.addMenuItem(
-            MENU_ID,
-            menuText,
-            true, // enabled
-            false // not checked
-        );
-
-        _generator.getDocumentInfo().then(
             function (document) {
-                console.log("Received complete document:");
-                _document = document;
-                handle(document);
+                runGenerator(document, generator);
             },
+            
             function (err) {
                 console.error(" Error in getDocumentInfo:", err);
             }
+
         ).done();    
     }
 
-    function stringify(object) {
-        try {
-            return JSON.stringify(object, null, "    ");
-        } catch (e) {
-            console.error(e);
+    function stringify(obj, circularProperties) {
+        var stringified,
+            circularProperties = circularProperties ? circularProperties : [];
+
+        function removeCircular(name, value) {
+            if (-1 === circularProperties.indexOf(name)) {
+                return value;
+            } else {
+                //Undefined properties will be removed from JSON.
+                return undefined; 
+            }
         }
-        return String(object);
+
+        try {
+            if (0 === circularProperties.length) {
+                stringified = JSON.stringify(obj, null, 4);
+            } else {
+                stringified = JSON.stringify(obj, removeCircular, 4);
+            }
+        } catch (e) {
+            console.error('Stringify error:', e);
+            stringified = String(obj);
+        }
+
+        return stringified;
     }
 
-    function savePixmap(pixmap, fileName){
-        var pixels = pixmap.pixels;
-        var len = pixels.length,
-            channels = pixmap.channelCount;
-     
-        // convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
-        for(var i=0;i<len;i+=channels){
-            var a = pixels[i];
-            pixels[i]   = pixels[i+1];
-            pixels[i+1] = pixels[i+2];
-            pixels[i+2] = pixels[i+3];
-            pixels[i+3] = a;
+
+    // TODO: Spawn a worker to handle the saving of the pixmap.
+    function savePixmap(pixmap, filePath){
+        var pixels = pixmap.pixels,
+            len = pixels.length,
+            pixel,
+            location,
+            png,
+            channelNo = pixmap.channelCount;
+
+        // Convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
+        for(location = 0; location < len; location += channelNo){
+            pixel = pixels[location];
+            pixels[location]   = pixels[location + 1];
+            pixels[location + 1] = pixels[location + 2];
+            pixels[location + 2] = pixels[location + 3];
+            pixels[location + 3] = pixel;
         }
-     
-        // init a new PNG
+
         var png = new PNG({
             width: pixmap.width,
             height: pixmap.height
         });
      
-        // set pixel data
-        png.data = pixmap.pixels;
-        // write to a file (will write out.png to the same directory as this *.js file
-        png.pack().pipe(fs.createWriteStream(path.resolve(__dirname, 'images/' + fileName)));
-    }
+        png.data = pixels;
 
-    function handle(document) {
-        if (true === regenerateDocument) {
-            fs.writeFile(path.resolve(__dirname, 'sample.json'), stringify(document), function (err) {
-                if(err) {
-                    console.log(err);
-                } else {
-                    console.log("The sample.json file was saved!");
-                    start();
-                }
-            });
-        } else {
-            start();
-        }
-    }
-
-    function start() {
-        psdFile = require(path.resolve(__dirname, 'sample.json'));
-        runGenerator();
+        png
+            .pack()
+            .pipe(fs.createWriteStream(filePath));
     }
 
     function getCSSFontFamily(fontName) {
@@ -321,13 +309,15 @@
 
         // TODO: Add default styles for all the bellow properties.
 
-        var css = {
+        var _this = this,
+            css = {
                 top: style._get('bounds.top', 0),
                 right: style._get('bounds.right', 0),
                 bottom: style._get('bounds.bottom', 0),
                 left: style._get('bounds.left', 0),
                 position: 'static',
                 background: {
+                    masterActive: style._get('layerEffects.masterFXSwitch', true),
                     active: style._has('fill'),
                     color: {
                         red: style._get('fill.color.red', 255),
@@ -347,15 +337,19 @@
                 },
                 opacity: style._get('blendOptions.opacity.value', 100) / 100,
                 border: {
+                    masterActive: style._get('layerEffects.masterFXSwitch', true),
                     active: style._has('layerEffects.frameFX'),
                     color: {
                         red: style._get('layerEffects.frameFX.color.red', 255),
                         green: style._get('layerEffects.frameFX.color.green', 255),
                         blue: style._get('layerEffects.frameFX.color.blue', 255)
                     },
-                    size: 0
+                    opacity: style._get('layerEffects.frameFX.opacity.value', 100),
+                    size: style._get('layerEffects.frameFX.size', 3)
                 },
+                boxSizing: style._get('layerEffects.frameFX.style', 'outsetFrame'),
                 boxShadow: {
+                    masterActive: style._get('layerEffects.masterFXSwitch', true),
                     active: style._has('layerEffects.dropShadow')  
                         || style._has('layerEffects.innerShadow')
                         || style._has('layerEffects.outerGlow')
@@ -411,8 +405,8 @@
                 },
                 borderRadius: [],
                 zIndex: style.index,
-                color: {},
-                fontSize: 16,
+                color: style._get('text.textStyleRange[0].textStyle.color', {}),
+                fontSize: style._get('text.textStyleRange[0].textStyle.size', 16),
                 textAlign: style._get('text.paragraphStyleRange[0].paragraphStyle.align', 'none'),
                 fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial')
             },
@@ -478,9 +472,8 @@
 
         // ---------
         // Text styles
-        css.color = style._get('text.textStyleRange[0].textStyle.color', {});
 
-        css.fontSize = style._get('text.textStyleRange[0].textStyle.size', 16) / 2.5;
+
         // For some reason font size comes in a different format that is 
 
         // TODO: Line height
@@ -492,8 +485,54 @@
         css.position = 'absolute';
 
 
-        css.width = css.right - css.left;
-        css.height = css.bottom - css.top;
+        if ('textLayer' === style.type) {
+            if (true === style._has('text.textShape.bounds')) {
+                (function () {
+                    var boundingBox = style._get('text.textShape.bounds') ;
+                    // 2 seems make up for the difference between PS and web
+                    css.width = Math.ceil(css.right - css.left);
+                    css.height = Math.floor(css.bottom - css.top);
+                }());
+            } else {
+                css.width = 'auto';
+                css.height = 'auto';
+            }
+        } else {
+            css.width = css.right - css.left;
+            css.height = css.bottom - css.top;
+        }
+
+        //
+        // Overwrites
+        //
+
+        // Border requires adjustments to top, left and widht, height
+        if (true === css.border.active) {
+            // TODO: Figure out how to keep the box-sizing: border-box. Currently
+            // inside photoshop you set the content
+            css.backgroundClip = 'content-box';
+            if ('insetFrame' === css.boxSizing) {
+                css.borderRadius.forEach(function (bound, index) {
+                    css.borderRadius[index] = bound + css.border.size;
+                });
+            } else if ('outsetFrame' === css.boxSizing) {
+                css.top -= css.border.size;
+                css.left -= css.border.size;
+                css.borderRadius.forEach(function (bound, index) {
+                    css.borderRadius[index] = bound + css.border.size;
+                });
+            } else if ('centeredFrame' === css.boxSizing) {
+                css.top -= css.border.size / 2;
+                css.left -= css.border.size / 2;
+                css.width -= css.border.size;
+                css.height -= css.border.size;
+                css.borderRadius.forEach(function (bound, index) {
+                    css.borderRadius[index] = bound + css.border.size;
+                });
+            } else {
+                console.log('The box sizing "' + css.boxSizing + '" is not recognised.');
+            }
+        }
 
         return css;
     }
@@ -506,7 +545,7 @@
         };
     }());
 
-    function Layer(layer) {
+    function Layer(structure, layer) {
         var _this = this;
 
         this.id = layer.id;
@@ -522,6 +561,8 @@
         this.text = '';
         this.type = layer.type;
 
+        this.structure = structure;
+
         // Presumed css styles
         this.css = parseCSS(layer);
 
@@ -534,6 +575,7 @@
             case 'shapeLayer':
                 this.tag = 'div';
 
+                // TODO: This means the path might require to be produced in SVG somehow
                 if ('unknown' === layer._get('path.pathComponents[0].origin.type', 'shapeLayer')) {
                     this.tag = 'img';
                 }
@@ -543,6 +585,50 @@
             case 'textLayer':
                 this.tag = 'span';
                 this.text = layer._get('text.textKey', '');
+
+                // TODO: For all text styles create layers so that we 
+                // can control them better
+
+
+                /*
+                console.log(this.text);
+                // If the text has intermetiary styles like "<bold>Foo</bold> bar"
+                layer._get('text.textStyleRange', []).forEach(function (range) {
+                    var text = _this.text;
+        
+                    var match = text.splice(range.from, range.to).join('');
+                    var container = "";
+
+                    if ('Medium' === range._get('textStyle.fontStyleName')) {
+                        container = '<strong>' + match + '</strong>';
+                    } else {
+                        container = match;
+                    }
+    
+
+                    var container = [];
+
+                    var i;
+                    for (i = 0; i < text.length; i += 1) {
+                        container.push(text[i]);                             
+                    }
+
+                    var sliced = container.splice(range.from, range.to);
+
+                    console.log(sliced);
+                    var applyArguments = [range.from, range.to];
+
+                    console.log(applyArguments);
+                    sliced.forEach(function (character) {
+                        applyArguments.push(character);
+                    });
+
+                    console.log(applyArguments);
+                    _this.text = text.splice.apply(text, applyArguments);
+                });
+                console.log('VS' + this.text);
+                */
+
             break;
 
             case 'layer':
@@ -554,29 +640,17 @@
             break;
         }
 
-        if (true === regenerateImages && 'img' === this.tag) {
-            fs.exists(path.resolve(__dirname, 'images/' +  _this.cssName + '.png'), function (exists) {
-                if (false === exists) {
-                    _generator.getPixmap(_document.id, layer.id,{}).then(
-                        function(pixmap){
-                        savePixmap(pixmap, _this.cssName + '.png');
-                    },
-                        function(err){
-                        console.error("err pixmap:",err);
-                    }).done();
-                } else {
-                    // The image was already generated.
-                }
-            });
-
-        } else {
-            // No regeneration is required.
-        }
-
         // Parse children layers.
         if (undefined !== layer.layers) {
             layer.layers.forEach(function (siblingLayer) {
-                _this.siblings.push(new Layer(siblingLayer));
+
+                // Ignore masks for now!
+                // TODO: Do not ignore masks.
+                if (true !== siblingLayer.mask.removed) {
+                    return;
+                }
+
+                _this.siblings.push(new Layer(structure, siblingLayer));
             });
         }
 
@@ -592,6 +666,7 @@
             value = this.css[name],
             _this = this;
 
+        // TODO: Add if statement for dealing with Master Active switch
         switch (name) {
             case 'top':
                 property += Math.round(value) - Math.round(this.parent.css.top) + 'px';
@@ -614,16 +689,30 @@
             break;
 
             case 'width':
-                property += value + 'px';
+                property += value;
+                
+                if ('auto' !== value) {
+                    property += 'px';
+                }
+
             break;
 
             case 'height':
+                property += value;
+                
+                if ('auto' !== value) {
+                    property += 'px';
+                }
+
+            break;
+
+            case 'lineHeight':
                 property += value + 'px';
             break;
 
             case 'background':
 
-                if (true === value.active) {
+                if (true === value.active && true === value.masterActive) {
 
                     // In photohop there is the case where bitmap layers have background styles applied
                     // but still keep a large portion transparent. This leads to images that cover everything 
@@ -677,7 +766,26 @@
             break;
             
             case 'border':
+                if (true === value.active) {
+                    property += Math.round(value.size) + 'px solid rgba(' 
+                        + Math.round(value.color.red) + ', '
+                        + Math.round(value.color.green) + ', '
+                        + Math.round(value.color.blue) + ', ' 
+                        + (value.opacity / 100).toFixed(2) + ')';
+                }
+            break;
 
+            case 'boxSizing':
+
+                if ('outsetFrame' === value) {
+                    property += 'content-box;'
+                } else if ('insetFrame' === value) {
+                    property += 'border-box;'
+                } else if ('centeredFrame' === value) {
+                    property += 'padding-box';
+                } else {
+                    console.log('Border sizing property ' + value + ' was not found.');
+                }
             break;
 
             case 'borderRadius':
@@ -745,6 +853,10 @@
                 } else {
                     // Not active 
                 }
+            break;
+
+            case 'backgroundClip':
+                property += value;
             break;
 
             /*
@@ -864,7 +976,7 @@
 
         switch (this.tag) {
             case 'img':
-                html += '\n<' + this.tag + ' id="' + this.cssName + '" src="images/' + (this.cssName + '.png') + '" />';
+                html += '\n<' + this.tag + ' id="' + this.cssName + '" src="' + this.structure.folders.images + this.fileName + '" />';
             break;
 
             case 'div':
@@ -880,21 +992,32 @@
         return html;
     };
 
-    function Structure(document) {
+    // Config should contain:
+    // folder Obj
+    // files Obj
+    // document Obj - reference to the document
+    // generator Obj - reference to the generator
+
+    function Structure(config) {
         var _this = this;
 
-        this.doc = [];
+
+        Object.keys(config).forEach(function (configKey) {
+            _this[configKey] = config[configKey];
+        })
+
         this.layers = [];
         this.html = '';
         this.css = '';
+        this.psdPath = this.document.file;
+        this.psdName = this.psdPath.substr(this.psdPath.lastIndexOf('/') + 1, this.psdPath.length);
 
         // This is the top most parent of the document. 
         // Catch all traversal that arrive here.
         this.parent = {
-            css: parseCSS({})
+            css: parseCSS({}),
+            cssName: 'global',
         };
-
-        this.document = document;
 
         this.header = '<!DOCTYPE html>' +
             '<head>' +
@@ -908,7 +1031,12 @@
     Structure.prototype.parse = function () {
         var _this = this;
         this.document.layers.forEach(function (layer) {
-            _this.layers.push(new Layer(layer));
+            // Ignore masks for now!
+            // TODO: Do not ignore masks.
+            if (true !== layer.mask.removed) {
+                return;
+            }
+            _this.layers.push(new Layer(_this, layer));
         });
     };
 
@@ -916,9 +1044,9 @@
 
         function linkSiblings(siblings, parent) {
             siblings.forEach(function (sibling, index) {
-                
+
                 sibling.parent = parent;
-                
+
                 if (0 < index) {
                     sibling.prev = siblings[index - 1];
                 }
@@ -949,32 +1077,89 @@
         this.html = this.header + this.html + this.footer;
     };
 
-    Structure.prototype.toJSON = function (filename) {
+    Structure.prototype.saveToJSON = function () {
 
-        function removeLinks(name, value) {
-            if (-1 === ['parent', 'prev', 'next'].indexOf(name)) {
-                return value;
-            } else {
-                return undefined; // When undefined the property is removed from the JSON.
-            }
-        }
+        fs.writeFileSync(this.files.document, stringify(this.document));
+        fs.writeFileSync(
+            this.files.structure, 
+            stringify(this, ['parent', 'prev', 'next', 'document', 'generator', 'structure'])
+        );
 
-        fs.writeFileSync(filename, JSON.stringify(this.layers, removeLinks, 4));
-        console.log('Structure file was saved.');
+        console.log('Saved raw document to "' + this.files.document + '"');
+        console.log('Saved parsed structure to "' + this.files.structure + '"');
     };
 
     Structure.prototype.output = function () {
-        fs.writeFileSync(path.resolve(__dirname, 'index.html'), this.html);
-        fs.writeFileSync(path.resolve(__dirname, 'style.css'), this.css);
+        fs.writeFileSync(this.files.html, this.html);
+        fs.writeFileSync(this.files.css, this.css);
         console.log('Index.html and style.css were created.');
     };
 
-    function runGenerator() {
-        var structure = new Structure(psdFile);
+    Structure.prototype.regenerateImages = function () {
+        var _this = this;
+
+        function regenerateImages(layers) {
+
+            layers.forEach(function (layer) {
+                
+                if ('img' === layer.tag) {
+                    
+                    // TODO: Add a layer hashsum at the end of the layer to ensure that
+                    // if the layer has changed then the image should be regenerated as well.
+                    
+                    layer.fileName = _this.psdName + '_' + layer.parent.cssName + '_' + layer.cssName + '.png';
+                    layer.filePath = _this.folders.images + layer.fileName;
+
+                    if (true === fs.existsSync(layer.filePath)) {
+
+                        // The image already exists. No need to regenerate it.
+                        // 
+                    } else {
+
+                        _this.generator.getPixmap(_this.document.id, layer.id, {}).then(
+                            function(pixmap){
+                                savePixmap(pixmap, layer.filePath);
+                            },
+                            function(err){
+                                console.error("Pixmap error:", err);
+                            }
+                        ).done();
+                    }
+                }
+
+                if (0 !== layer.siblings.length) {
+                    regenerateImages(layer.siblings);
+                } else {
+                    // The no further siblings must be checked for images.
+                }
+            });
+        
+        }
+
+        regenerateImages(this.layers);
+    };
+
+    function runGenerator(document, generator) {
+        var structure = new Structure({
+            folders: {
+                images: path.resolve(__dirname, 'images/') + '/'
+            },
+            files: {
+                html: path.resolve(__dirname, 'index.html'),
+                css: path.resolve(__dirname, 'style.css'),
+                document: path.resolve(__dirname, 'document.json'),
+                structure: path.resolve(__dirname, 'structure.json')
+            },
+            document: document,
+            generator: generator
+        });
+
         structure.parse();
         structure.link();
+        structure.regenerateImages();
 
-        structure.toJSON(path.resolve(__dirname, 'structure.json'));
+        structure.saveToJSON();
+
         structure.refreshCode();
 
         structure.output();
