@@ -510,7 +510,7 @@
 
                     css.width = boundsWidth;
                     css.height = boundsHeight;
-                    
+                    css.left -= Math.ceil(boxBounds.left);
                 }
 
             }());
