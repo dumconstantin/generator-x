@@ -1027,8 +1027,9 @@
         this.footer = '</body></html>';
     }
 
-    Structure.prototype.parse = function () {
+    Structure.prototype.createLayers = function () {
         var _this = this;
+
         this.document.layers.forEach(function (layer) {
             // Ignore masks for now!
             // TODO: Do not ignore masks.
@@ -1037,28 +1038,30 @@
             }
             _this.layers.push(new Layer(_this, layer));
         });
+
     };
 
-    Structure.prototype.link = function () {
+    Structure.prototype.linkLayers = function () {
 
-        function linkSiblings(siblings, parent) {
-            siblings.forEach(function (sibling, index) {
+        function linkLayers(layers, parent) {
 
-                sibling.parent = parent;
+            layers.forEach(function (layer, index) {
+
+                layer.parent = parent;
 
                 if (0 < index) {
-                    sibling.prev = siblings[index - 1];
+                    layer.prev = layers[index - 1];
                 }
 
-                if (siblings.length > index + 1) {
-                    sibling.next = siblings[index + 1];
+                if (layers.length > index + 1) {
+                    layer.next = layers[index + 1];
                 }
      
-                linkSiblings(sibling.siblings, sibling);
+                linkLayers(layer.siblings, layer);
             });
         }
 
-        linkSiblings(this.layers, this.parent);
+        linkLayers(this.layers, this.parent);
     };
 
     Structure.prototype.refreshCode = function () {
@@ -1094,10 +1097,10 @@
         console.log('Index.html and style.css were created.');
     };
 
-    Structure.prototype.regenerateImages = function () {
+    Structure.prototype.generateImages = function () {
         var _this = this;
 
-        function regenerateImages(layers) {
+        function generateImages(layers) {
 
             layers.forEach(function (layer) {
                 
@@ -1127,7 +1130,7 @@
                 }
 
                 if (0 !== layer.siblings.length) {
-                    regenerateImages(layer.siblings);
+                    generateImages(layer.siblings);
                 } else {
                     // The no further siblings must be checked for images.
                 }
@@ -1135,7 +1138,7 @@
         
         }
 
-        regenerateImages(this.layers);
+        generateImages(this.layers);
     };
 
     Structure.prototype.generateCssIds = function () {
@@ -1182,10 +1185,11 @@
             generator: generator
         });        
 
-        structure.parse();
-        structure.link();
+        structure.createLayers();
+        structure.linkLayers();
+
         structure.generateCssIds();
-        structure.regenerateImages();
+        structure.generateImages();
 
         structure.saveToJSON();
 
