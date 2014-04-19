@@ -710,7 +710,8 @@
     function parseText(layer) {
         var text = layer._get('text.textKey', ''),
             transformedText = '',
-            textRanges = layer._get('text.textStyleRange', []);
+            textRanges = layer._get('text.textStyleRange', []),
+            lastParsedIndex = 0;
 
         if (1 === textRanges.length) {
             // If there is just one text range that means the text
@@ -721,6 +722,15 @@
                     styles = "",
                     fontFamily = range.textStyle.fontName,
                     fontVariant = range.textStyle.fontStyleName;
+
+
+                // For some reason Photoshop sometimes returns a duplicated
+                // text range.
+                if (lastParsedIndex !== range.to) {
+                    return;
+                }
+
+                lastParsedIndex = range.to;
 
                 styles += 'font-family: ' 
                     + fontFamily.toLowerCase() + fontVariant.replace(' ', '_').toLowerCase();
