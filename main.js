@@ -554,7 +554,7 @@
             // OR in some cases it might be an SVG.
         }
 
-        if (false === style._get('path.defaultFill', true)) {
+        if (false === style._get('strokeStyle.fillEnabled', true)) {
             css.background.active = false;
         }
 
