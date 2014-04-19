@@ -23,8 +23,7 @@
     // than pixels, all values must be converted before using. 
     // Defaults: types (points) rulers (in?)
     // 
-    // TODO:
-
+    //
 
 
     /**
@@ -455,7 +454,11 @@
                 },
                 borderRadius: [],
                 zIndex: style.index,
-                color: style._get('text.textStyleRange[0].textStyle.color', {}),
+                color: { 
+                    red: style._get('text.textStyleRange[0].textStyle.color.red', 0),
+                    green: style._get('text.textStyleRange[0].textStyle.color.green', 0),
+                    blue: style._get('text.textStyleRange[0].textStyle.color.blue', 0)
+                },
                 fontSize: style._get('text.textStyleRange[0].textStyle.size', 16),
                 textAlign: style._get('text.paragraphStyleRange[0].paragraphStyle.align', 'inherit'),
                 fontFamily: {
@@ -551,8 +554,22 @@
 
 
         if ('textLayer' === style.type) {
+
+
+            // TODO: Revisit lineHeight / leading styles. There might be
+            // a better way to parse lineHeight.
+
+            // 30 seems to be the default leading/line height. 
+            // In CSS the line height is set on the line on which the text sits
+            // while leading seems to be the distance between lines.
             
-            css.lineHeight = css.fontSize - 1;
+            // 7. However, if leading is set to "auto", the actual leading number is 120% of the font size.
+
+            css.lineHeight = (css.fontSize + style._get('text.textStyleRange[0].textStyle.leading', 30) / 2) - 1;
+
+            // TODO: This is a sub optimal solution to compensate for the difference between
+            // line height and leading.
+            css.top -= 7;
 
 
             (function () {
@@ -579,7 +596,7 @@
             // 4. Extract the width pixel value from the vector implementation in 
             // bitmap environment.
 
-            // TODO: Adjust the estimated 10px that seems to accomodate
+            // TODO: Adjust the estimated px value bellow that seems to accomodate
             // the difference between PSD and Browser text rendering.
             css.width = css.width + 10;
             css.height = 'auto';
@@ -606,7 +623,7 @@
                 // the goal of this). If the desiner did create a less than 10 px
                 // container for the text then this might be a bad practice to do
                 // so.
-                if (10 > Math.abs(boxWidthDifference)) {
+                if (6 > Math.abs(boxWidthDifference)) {
                     // The text does not have a defined area and an be left 
                     // to be arranged through the alignment styles of the parent
                     // element.
@@ -685,8 +702,14 @@
             // is uniform.
         } else {
             textRanges.forEach(function (range) {
-                var extractedText = text.substr(range.from, range.to - range.from);
-                
+                var extractedText = text.substr(range.from, range.to - range.from),
+                    styles = "",
+                    fontFamily = range.textStyle.fontName,
+                    fontVariant = range.textStyle.fontStyleName;
+
+                styles += 'font-family: ' 
+                    + fontFamily.toLowerCase() + fontVariant.replace(' ', '_').toLowerCase();
+
                 // TODO: Add the ability to combine bold, italic or 
                 // other styles on a single text. This might require
                 // 1. a single wrapper with clases:
@@ -696,9 +719,11 @@
                 // I think I would prefer option No. 1
 
                 if (true === range.textStyle.syntheticBold) {
-                    extractedText = '<strong>' + extractedText + '</strong>';
+                    extractedText = '<strong style="' + styles + '">' + extractedText + '</strong>';
                 } else if (true === range.textStyle.syntheticItalic) {
-                    extractedText = '<em>' + extractedText + '</em>';
+                    extractedText = '<em style="' + styles + '">' + extractedText + '</em>';
+                } else {
+                    extractedText = '<span style="' + styles + '">' + extractedText + '</span>';
                 }
 
                 transformedText += extractedText;
