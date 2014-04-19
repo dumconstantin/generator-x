@@ -472,6 +472,13 @@
             css[property] = overWrites[property];
         });
 
+        (function () { 
+            var baseLineShift = Math.abs(style._get('text.textStyleRange[0].textStyle.baselineShift', 1));
+            if (1 !== baseLineShift) {
+                css.fontSize = Math.floor(css.fontSize / baseLineShift);
+            }
+        }());
+
         // -----------------
         // Background styles
 
@@ -758,6 +765,8 @@
         if ('' !== transformedText) {
             text = transformedText;
         }
+
+        // Replace return cartrige with new lines.
 
         return text;
     }
@@ -1145,6 +1154,7 @@
             css += '\tposition: absolute;\n';
             css += '\ttop: 0;\n';
             css += '\tleft: 0;\n';
+            css += 'white-space: pre;';
             css += after;
             css += '}\n';
         }
