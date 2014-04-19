@@ -307,10 +307,19 @@
             if (0 !== shadow.spread) {
                 property += (shadow.blur - (shadow.blur * shadow.spread / 100)) + 'px ';
             }
-            property += shadow.blur + 'px ';
+
+            // If this is a text layer then a pseudo element will be generated for the glow.
+            // The text-shadow does not have an additional parameter.
+            if ('textLayer' !== elementType) {
+                property += shadow.blur + 'px ';
+            }
         } else if ('outerGlow' === shadowType) {
             property += shadow.blur + 'px ';
-            property += shadow.spread + 'px ';
+
+            // Same as above.
+            if ('textLayer' !== elementType) {
+                property += shadow.spread + 'px ';
+            }
         } else {
             property += shadow.blur + 'px ';
         }
@@ -766,8 +775,6 @@
             text = transformedText;
         }
 
-        // Replace return cartrige with new lines.
-
         return text;
     }
 
@@ -1092,7 +1099,7 @@
         var _this = this,
             css = '',
             addFont = '',
-            after = '';
+            before = '';
 
         if (false === this.visible) {
             return '';
@@ -1111,9 +1118,9 @@
 
             if ('' !== parsedCSS.after) {
                 if ('boxShadow' === property && 'textLayer' === _this.type) {
-                    after += '\ttext-shadow: ' + parsedCSS.after + ';\n';
+                    before += '\ttext-shadow: ' + parsedCSS.after + ';\n';
                 } else {
-                    after += '\t' + _this.getCSSName(property) + ': ' + parsedCSS.after + ';\n';
+                    before += '\t' + _this.getCSSName(property) + ': ' + parsedCSS.after + ';\n';
                 }
             }
             
@@ -1139,11 +1146,15 @@
 
         css += getCSSFontFamily(addFont);
 
-        if ("" !== after) {
+        if ("" !== before) {
             css += '\n#' + this.cssId + '::before {\n';
             
             if ('' !== this.text) {
-                css += '\tcontent: "' + this.text.replace(/[\s]+/g, ' ') + '";\n';
+                css += '\tcontent: "' 
+                    + this.text
+                        .replace('\r', ' \\A ')
+                        .replace(/[\s]+/g, ' ')
+                    + '";\n';
             } else {
                 css += '\tcontent: "";\n';
             }
@@ -1155,7 +1166,8 @@
             css += '\ttop: 0;\n';
             css += '\tleft: 0;\n';
             css += 'white-space: pre;';
-            css += after;
+            css += 'color: transparent;';
+            css += before;
             css += '}\n';
         }
 
@@ -1175,7 +1187,8 @@
             return '';
         }
 
-        content += this.text;
+        content += this.text
+            .replace("\r", "<br />");
 
         this.siblings.forEach(function (sibling) {
             content += sibling.getHTML();
