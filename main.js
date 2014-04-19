@@ -20,6 +20,18 @@
             'IcoMoon': 'icomoonregular',
             'Roboto': 'robotoregular'
         };
+
+
+    // GLOBAL TODOs
+    // 
+    // TODO: If the designer has his Types and Rulers in anything else 
+    // than pixels, all values must be converted before using. 
+    // Defaults: types (points) rulers (in?)
+    // 
+    // TODO:
+
+
+
     /**
      * Has method
      * Will provide a response for a chain of Object properties
@@ -266,12 +278,33 @@
             property += ', ';
         }
 
-        property += Math.round(x) + 'px ' + Math.round(y) + 'px ' 
-        + shadow.blur + 'px '
-        + ' rgba(' + Math.round(shadow.color.red) + ', '
-        + Math.round(shadow.color.green) + ', '
-        + Math.round(shadow.color.blue) + ', '
-        + (shadow.opacity / 100) + ')';
+        // TODO: For outer glows, create the use case for gradient usage instead
+        // of solid color.
+
+        property += Math.round(x) + 'px ' + Math.round(y) + 'px ';
+    
+        // TOOD: Establish the relation between innerGlow parameters (chokeMatte and size) and
+        // omolog values in CSS.
+        // It seems that a Choke: 90%, Size: 10px is the same as box-shadow: 0 0 0 10px
+        
+        if ('innerGlow' === shadowType) { 
+            if (0 !== shadow.spread) {
+                property += (shadow.blur - (shadow.blur * shadow.spread / 100)) + 'px ';
+            }
+            property += shadow.blur + 'px ';
+        } else if ('outerGlow' === shadowType) {
+            property += shadow.blur + 'px ';
+            property += shadow.spread + 'px ';
+        } else {
+            property += shadow.blur + 'px ';
+        }
+
+
+
+        property += ' rgba(' + Math.round(shadow.color.red) + ', '
+            + Math.round(shadow.color.green) + ', '
+            + Math.round(shadow.color.blue) + ', '
+            + (shadow.opacity / 100) + ')';
 
         if (('inset' === shadowType || 'innerGlow' === shadowType) 
             && 'textLayer' !== elementType) {
@@ -305,7 +338,7 @@
     // in the structure tree, allocate different cssNames to avoid id collision
 
 
-    function parseCSS(style) {
+    function parseCSS(style, globalStyles) {
 
         // TODO: Add default styles for all the bellow properties.
 
@@ -360,10 +393,9 @@
                             green: style._get('layerEffects.dropShadow.color.green', 0),
                             blue: style._get('layerEffects.dropShadow.color.blue', 0)
                         },
-                        opacity: style._get('layerEffects.dropShadow.opacity.value', 100),
-                        distance: style._get('layerEffects.dropShadow.distance', 0),
-                        blur: style._get('layerEffects.dropShadow.blur', 0),
-                        // TODO: Add global lighting angle
+                        opacity: style._get('layerEffects.dropShadow.opacity.value', 75),
+                        distance: style._get('layerEffects.dropShadow.distance', 5),
+                        blur: style._get('layerEffects.dropShadow.blur', 5),
                         angle: style._get('layerEffects.dropShadow.localLightingAngle.value', 120),
                         spread: style._get('layerEffects.dropShadow.chokeMatte', 0) 
                     },
@@ -374,9 +406,9 @@
                             green: style._get('layerEffects.innerShadow.color.green', 0),
                             blue: style._get('layerEffects.innerShadow.color.blue', 0)
                         },
-                        opacity: style._get('layerEffects.innerShadow.opacity.value', 1),
-                        distance: style._get('layerEffects.innerShadow.distance', 0),
-                        blur: style._get('layerEffects.innerShadow.blur', 0),
+                        opacity: style._get('layerEffects.innerShadow.opacity.value', 75),
+                        distance: style._get('layerEffects.innerShadow.distance', 5),
+                        blur: style._get('layerEffects.innerShadow.blur', 5),
                         // TODO: Add global lighting angle
                         angle: style._get('layerEffects.innerShadow.localLightingAngle.value', 120),
                         spread: style._get('layerEffects.innerShadow.chokeMatte', 0) 
@@ -384,22 +416,24 @@
                     outerGlow: {
                         active: style._has('layerEffects.outerGlow'),
                         color: {
-                            red: style._get('layerEffects.outerGlow.color.red', 0),
-                            green: style._get('layerEffects.outerGlow.color.green', 0),
-                            blue: style._get('layerEffects.outerGlow.color.blue', 0),
+                            red: style._get('layerEffects.outerGlow.color.red', 255),
+                            green: style._get('layerEffects.outerGlow.color.green', 255),
+                            blue: style._get('layerEffects.outerGlow.color.blue', 190),
                         },
-                        blur: style._get('layerEffects.outerGlow.blur', 0),
-                        opacity: style._get('layerEffects.outerGlow.opacity.value', 100)
+                        blur: style._get('layerEffects.outerGlow.blur', 5),
+                        opacity: style._get('layerEffects.outerGlow.opacity.value', 75),
+                        spread: style._get('layerEffects.outerGlow.chokeMatte', 0)
                     },
                     innerGlow: {
                         active: style._has('layerEffects.innerGlow'),
                         color: {
-                            red: style._get('layerEffects.innerGlow.color.red', 0),
-                            green: style._get('layerEffects.innerGlow.color.green', 0),
-                            blue: style._get('layerEffects.innerGlow.color.blue', 0),
+                            red: style._get('layerEffects.innerGlow.color.red', 255),
+                            green: style._get('layerEffects.innerGlow.color.green', 255),
+                            blue: style._get('layerEffects.innerGlow.color.blue', 190),
                         },
-                        blur: style._get('layerEffects.innerGlow.blur'),
-                        opacity: style._get('layerEffects.innerGlow.opacity.value', 100)
+                        blur: style._get('layerEffects.innerGlow.blur', 5),
+                        opacity: style._get('layerEffects.innerGlow.opacity.value', 75),
+                        spread: style._get('layerEffects.innerGlow.chokeMatte', 0)
                     }
                 },
                 borderRadius: [],
@@ -407,9 +441,7 @@
                 color: style._get('text.textStyleRange[0].textStyle.color', {}),
                 fontSize: style._get('text.textStyleRange[0].textStyle.size', 16),
                 textAlign: style._get('text.paragraphStyleRange[0].paragraphStyle.align', 'inherit'),
-                fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial'),
-                fontWeight: style._get('text.textStyleRange[0].textStyle.syntheticBold', false),
-                fontStyle: style._get('text.textStyleRange[0].textStyle.syntheticItalic', false)
+                fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial')
             },
             textColor;
 
@@ -423,9 +455,22 @@
             blue: style._get('layerEffects.solidFill.color.blue', css.background.color.blue)
         };
 
+
+        // Inner and outer shadows can opt to not use globalAngles and have 
+        // the default angle.
+        if (true === style._get('layerEffects.innerShadow.useGlobalAngle', true)) {
+            css.boxShadow.inset.angle = globalStyles.globalLight.angle;
+        }
+
+        if (true === style._get('layerEffects.dropShadow.useGlobalAngle', true)) {
+            css.boxShadow.outer.angle = globalStyles.globalLight.angle;
+        }
+
         // TODO: Implement Radial Gradient
         
         // TODO: Implement Angle Gradient
+
+        // TODO: Implement Drop shadow countour settings on layersEffects.dropShadow.transferSpec
 
         // Gradient Colors
         style._get('layerEffects.gradientFill.gradient.colors', []).forEach(function (color) {
@@ -475,6 +520,23 @@
 
         if ('textLayer' === style.type) {
             
+            css.lineHeight = css.fontSize - 1;
+
+
+            (function () {
+                var textStyleRanges = style._get('text.textStyleRange', []);
+
+                if (1 === textStyleRanges.length)  {
+                    css.fontWeight = style._get('text.textStyleRange[0].textStyle.syntheticBold', false),
+                    css.fontStyle = style._get('text.textStyleRange[0].textStyle.syntheticItalic', false)
+                } else {
+                    css.fontWeight = false;
+                    css.fontStyle = false;
+                }
+
+            }());
+
+
             // TODO: Implement the WebKit algorithm to detect the real width of the 
             // text with all the styles attached. 
             // This should do the following:
@@ -529,7 +591,6 @@
             }());
         }
 
-
         // [TEMP] Overwrite positioning for now
         css.position = 'absolute';
 
@@ -582,6 +643,43 @@
         return css;
     }
 
+    function parseText(layer) {
+        var text = layer._get('text.textKey', ''),
+            transformedText = '',
+            textRanges = layer._get('text.textStyleRange', []);
+
+        if (1 === textRanges.length) {
+            // If there is just one text range that means the text
+            // is uniform.
+        } else {
+            textRanges.forEach(function (range) {
+                var extractedText = text.substr(range.from, range.to - range.from);
+                
+                // TODO: Add the ability to combine bold, italic or 
+                // other styles on a single text. This might require
+                // 1. a single wrapper with clases:
+                // <span class="bold italic fontSize20px">Text</span>
+                // 2. or a custom id
+                // <span id="custom-styling-113">Text</span>
+                // I think I would prefer option No. 1
+
+                if (true === range.textStyle.syntheticBold) {
+                    extractedText = '<strong>' + extractedText + '</strong>';
+                } else if (true === range.textStyle.syntheticItalic) {
+                    extractedText = '<em>' + extractedText + '</em>';
+                }
+
+                transformedText += extractedText;
+            });
+        }
+
+        if ('' !== transformedText) {
+            text = transformedText;
+        }
+
+        return text;
+    }
+
     var getUnique = (function () {
         var id = 0;
         return function () {
@@ -599,15 +697,14 @@
         this.visible = layer.visible;
         this.name = layer.name;
         this.index = layer.index;
-        this.text = '';
         this.type = layer.type;
-
+        this.text = '';
         this.structure = structure;
 
         // Raw css styles. 
         // This are similar to a "computed" style. Will include
         // all element styles which then can be further optimised.
-        this.css = parseCSS(layer);
+        this.css = parseCSS(layer, structure.styles);
 
         // Layer type specific configuration
         switch (layer.type) {
@@ -627,51 +724,7 @@
 
             case 'textLayer':
                 this.tag = 'span';
-                this.text = layer._get('text.textKey', '');
-
-                // TODO: For all text styles create layers so that we 
-                // can control them better
-
-
-                /*
-                console.log(this.text);
-                // If the text has intermetiary styles like "<bold>Foo</bold> bar"
-                layer._get('text.textStyleRange', []).forEach(function (range) {
-                    var text = _this.text;
-        
-                    var match = text.splice(range.from, range.to).join('');
-                    var container = "";
-
-                    if ('Medium' === range._get('textStyle.fontStyleName')) {
-                        container = '<strong>' + match + '</strong>';
-                    } else {
-                        container = match;
-                    }
-    
-
-                    var container = [];
-
-                    var i;
-                    for (i = 0; i < text.length; i += 1) {
-                        container.push(text[i]);                             
-                    }
-
-                    var sliced = container.splice(range.from, range.to);
-
-                    console.log(sliced);
-                    var applyArguments = [range.from, range.to];
-
-                    console.log(applyArguments);
-                    sliced.forEach(function (character) {
-                        applyArguments.push(character);
-                    });
-
-                    console.log(applyArguments);
-                    _this.text = text.splice.apply(text, applyArguments);
-                });
-                console.log('VS' + this.text);
-                */
-
+                this.text = parseText(layer);
             break;
 
             case 'layer':
@@ -747,10 +800,6 @@
                     property += 'px';
                 }
 
-            break;
-
-            case 'lineHeight':
-                property += value + 'px';
             break;
 
             case 'background':
@@ -922,12 +971,10 @@
                 property += value;
             break;
 
-            /*
             case 'lineHeight':
                 property += Math.round(value) + 'px';
             break;
-            */
-
+            
             case 'fontFamily':
                 if (undefined !== fonts[value]) {
                     property += fonts[value];
@@ -1079,10 +1126,17 @@
         this.cssIds = [];
 
 
+        this.styles = {
+            globalLight: {
+                angle: this.document._get('globalLight.angle', 118),
+                altitude: 0
+            }
+        };
+
         // This is the top most parent of the document. 
         // Catch all traversal that arrive here.
         this.parent = {
-            css: parseCSS({}),
+            css: parseCSS({}, this.styles),
             cssId: 'global',
         };
 
