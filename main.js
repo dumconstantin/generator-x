@@ -6,13 +6,7 @@
         fs = require('fs'),
         path = require('path'),
         PNG = require('pngjs').PNG,
-        events = new require('events'),
-
-        fonts = {
-            'Oswald': 'oswaldbook',
-            'IcoMoon': 'icomoonregular',
-            'Roboto': 'robotoregular'
-        };
+        events = new require('events');
 
     // GLOBAL TODOs
     // 
@@ -213,16 +207,34 @@
             break;
 
             case 'Roboto':
-                font += "@font-face {"
-                    + "font-family: 'robotoregular'; "
-                    + " src: url('fonts/roboto-regular.eot'); "
-                    + " src: url('fonts/roboto-regular.eot?#iefix') format('embedded-opentype')," 
-                    + "     url('fonts/roboto-regular.woff') format('woff'),"
-                    + "    url('fonts/roboto-regular.ttf') format('truetype'),"
-                    + "    url('fonts/roboto-regular.svg#robotoregular') format('svg');"
-                    + "font-weight: normal;"
-                    + "font-style: normal;"
-                    + "}";
+
+                var roboto = {
+                    black: 'robotoblack',
+                    blackitalic: 'robotoblack_italic',
+                    bold: 'robotobold',
+                    bolditalic: 'robotobold_italic',
+                    italic: 'robotoitalic',
+                    light: 'robotolight',
+                    medium: 'robotomedium',
+                    mediumitalic: 'robotomedium_italic',
+                    regular: 'robotoregular',
+                    thin: 'robotothin',
+                    thinitalic: 'robotothin_italic'
+                };
+
+                Object.keys(roboto).forEach(function (variant) {
+                    font += "@font-face {"
+                        + "font-family: '" + roboto[variant]+ "'; "
+                        + " src: url('fonts/roboto-" + variant + ".eot'); "
+                        + " src: url('fonts/roboto-" + variant + ".eot?#iefix') format('embedded-opentype')," 
+                        + "     url('fonts/roboto-" + variant + ".woff') format('woff'),"
+                        + "    url('fonts/roboto-" + variant + ".ttf') format('truetype'),"
+                        + "    url('fonts/roboto-" + variant + ".svg#roboto" + variant + "') format('svg');"
+                        + "font-weight: normal;"
+                        + "font-style: normal;"
+                        + "}";
+                });
+
             break;
 
             default:
@@ -437,7 +449,10 @@
                 color: style._get('text.textStyleRange[0].textStyle.color', {}),
                 fontSize: style._get('text.textStyleRange[0].textStyle.size', 16),
                 textAlign: style._get('text.paragraphStyleRange[0].paragraphStyle.align', 'inherit'),
-                fontFamily: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial')
+                fontFamily: {
+                    family: style._get('text.textStyleRange[0].textStyle.fontName', 'Arial'),
+                    variant: style._get('text.textStyleRange[0].textStyle.fontStyleName', 'Regular')
+                }
             },
             textColor;
 
@@ -984,11 +999,13 @@
             break;
             
             case 'fontFamily':
-                if (undefined !== fonts[value]) {
-                    property += fonts[value];
-                } else {
-                    property += value;
+
+                property += value.family.toLowerCase();
+
+                if ('Regular' !== value.variant) {
+                    property += value.variant.replace(' ', '_').toLowerCase()
                 }
+               
             break;
 
             default: 
@@ -1040,7 +1057,7 @@
             }
 
             if ('textLayer' === _this.type && 'fontFamily' === property) {
-                addFont = _this.css[property];
+                addFont = _this.css[property].family;
             }
 
             // console.log(getCSSFontFamily(_this[property]));
@@ -1048,6 +1065,8 @@
         });
 
         css += '}';
+
+        // TODO: If the font was already added do not add it again.
 
         css += getCSSFontFamily(addFont);
 
@@ -1327,6 +1346,8 @@
                 } else {
                     layer.cssId += index;
                 }
+
+                _this.cssIds.push(layer.cssId);
 
                 if (0 < layer.siblings.length) {
                     generateCssIds(layer.siblings);
