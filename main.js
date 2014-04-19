@@ -354,7 +354,7 @@
     // in the structure tree, allocate different cssNames to avoid id collision
 
 
-    function parseCSS(style, globalStyles) {
+    function parseCSS(style, globalStyles, overWrites) {
 
         // TODO: Add default styles for all the bellow properties.
 
@@ -467,6 +467,10 @@
                 }
             },
             textColor;
+
+        Object.keys(overWrites).forEach(function (property) {
+            css[property] = overWrites[property];
+        });
 
         // -----------------
         // Background styles
@@ -756,7 +760,7 @@
         };
     }());
 
-    function Layer(structure, layer) {
+    function Layer(structure, layer, overWrites) {
         var _this = this,
             parsedCSS;
 
@@ -772,7 +776,7 @@
         // Raw css styles. 
         // This are similar to a "computed" style. Will include
         // all element styles which then can be further optimised.
-        this.css = parseCSS(layer, structure.styles);
+        this.css = parseCSS(layer, structure.styles, overWrites);
 
         // Layer type specific configuration
         switch (layer.type) {
@@ -803,18 +807,19 @@
                 console.log('The layer type "' + layer.type + '" is no recognised.');
             break;
         }
+        
+        // Image layers should be exported also with layer FX.
+        // Layer FX can be disabled.
+        if ('img' === this.tag) {
+            this.css.boxShadow.active = false;
+            this.css.background.active = false;
+            this.css.border.active = false;
+        }
 
         // Parse children layers.
         if (undefined !== layer.layers) {
-            layer.layers.forEach(function (siblingLayer) {
-
-                // Ignore masks for now!
-                // TODO: Do not ignore masks.
-                if (true !== siblingLayer.mask.removed) {
-                    return;
-                }
-
-                _this.siblings.push(new Layer(structure, siblingLayer));
+            layer.layers.forEach(function (siblingLayer, index) {
+                structure.addLayer(_this.siblings, layer.layers, siblingLayer, index);
             });
         }
 
@@ -1209,7 +1214,7 @@
         // This is the top most parent of the document. 
         // Catch all traversal that arrive here.
         this.parent = {
-            css: parseCSS({}, this.styles),
+            css: parseCSS({}, this.styles, {}),
             cssId: 'global',
         };
 
@@ -1236,15 +1241,34 @@
     Structure.prototype.createLayers = function () {
         var _this = this;
 
-        this.document.layers.forEach(function (layer) {
-            // Ignore masks for now!
-            // TODO: Do not ignore masks.
-            if (true !== layer.mask.removed) {
-                return;
-            }
-            _this.layers.push(new Layer(_this, layer));
+        this.document.layers.forEach(function (layer, index) {
+            _this.addLayer(_this.layers, _this.document.layers, layer, index);
         });
 
+    };
+
+    Structure.prototype.addLayer = function (storage, layers, layer, index) {
+        var overWrites = {},
+            overWriteLayer;
+
+        // Ignore masks for now!
+        // TODO: Do not ignore masks.
+        if (true !== layer.mask.removed) {
+            return;
+        }
+
+        if (true === layer.clipped) {
+            overWriteLayer = layers[index + 1];
+
+            overWrites = {
+                top: overWriteLayer._get('bounds.top', 0),
+                right: overWriteLayer._get('bounds.right', 0),
+                bottom: overWriteLayer._get('bounds.bottom', 0),
+                left: overWriteLayer._get('bounds.left', 0)
+            }
+        }
+
+        storage.push(new Layer(this, layer, overWrites));
     };
 
     Structure.prototype.linkLayers = function () {
