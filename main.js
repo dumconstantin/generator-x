@@ -591,7 +591,6 @@
 
             css.lineHeight = (css.fontSize + style._get('text.textStyleRange[0].textStyle.leading', 30) / 2) - 1;
 
-
             /*
             (function () { 
                 var baseLineShift = Math.abs(style._get('text.textStyleRange[0].textStyle.baselineShift', 1));
@@ -608,7 +607,6 @@
             // TODO: This is a sub optimal solution to compensate for the difference between
             // line height and leading.
             css.top -= 7;
-
 
             (function () {
                 var textStyleRanges = style._get('text.textStyleRange', []);
@@ -847,6 +845,15 @@
             this.css.boxShadow.active = false;
             this.css.background.active = false;
             this.css.border.active = false;
+
+            if (undefined !== layer.boundsWithFX) {
+                this.css.top = layer.boundsWithFX.top;
+                this.css.left = layer.boundsWithFX.left;
+                this.css.bottom = layer.boundsWithFX.bottom;
+                this.css.right = layer.boundsWithFX.right;
+                this.css.width = this.css.right - this.css.left;
+                this.css.height = this.css.bottom - this.css.top;
+            }
         }
 
         // Parse children layers.
