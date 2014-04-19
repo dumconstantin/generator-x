@@ -1,20 +1,9 @@
 (function () {
     "use strict";
 
-    var _generator = null,
-        MENU_ID = "core-version-test",
-        fs = require('fs'),
+    var fs = require('fs'),
         path = require('path'),
         PNG = require('pngjs').PNG,
-        psdFile,
-        doc = '<!DOCTYPE html><body>',
-        styles = {},
-        stylesOutput = '<style>',
-        html = '',
-        _document,
-        regenerateDocument = true,
-        regenerateImages = true,
-        structure = {},
         fonts = {
             'Oswald': 'oswaldbook',
             'IcoMoon': 'icomoonregular',
