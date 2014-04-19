@@ -604,10 +604,6 @@
             }());
             */
 
-            // TODO: This is a sub optimal solution to compensate for the difference between
-            // line height and leading.
-            css.top -= 7;
-
             (function () {
                 var textStyleRanges = style._get('text.textStyleRange', []);
 
@@ -664,6 +660,10 @@
                     // to be arranged through the alignment styles of the parent
                     // element.
                     css.textAlign = 'left';
+
+                    // TODO: This is a sub optimal solution to compensate for the difference between
+                    // line height and leading.
+                    css.top -= 7;
                 } else {
                     // The text has a defined area and needs to be further
                     // wrapped in a parent container element.
