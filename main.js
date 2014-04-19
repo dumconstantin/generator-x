@@ -481,13 +481,6 @@
             css[property] = overWrites[property];
         });
 
-        (function () { 
-            var baseLineShift = Math.abs(style._get('text.textStyleRange[0].textStyle.baselineShift', 1));
-            if (1 !== baseLineShift) {
-                css.fontSize = Math.floor(css.fontSize / baseLineShift);
-            }
-        }());
-
         // -----------------
         // Background styles
 
@@ -597,6 +590,20 @@
             // 7. However, if leading is set to "auto", the actual leading number is 120% of the font size.
 
             css.lineHeight = (css.fontSize + style._get('text.textStyleRange[0].textStyle.leading', 30) / 2) - 1;
+
+
+            /*
+            (function () { 
+                var baseLineShift = Math.abs(style._get('text.textStyleRange[0].textStyle.baselineShift', 1));
+                
+                // 1px baseLineShift = 2.40566
+
+                if (2.40566 > baseLineShift) {
+                    css.fontSize = Math.floor(css.fontSize / 2);
+                    css.lineHeight = Math.floor(css.lineHeight / 2);
+                }
+            }());
+            */
 
             // TODO: This is a sub optimal solution to compensate for the difference between
             // line height and leading.
