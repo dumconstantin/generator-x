@@ -547,6 +547,13 @@
             break;
         }
 
+        if (true === style._has('strokeStyle', false)) {
+            // TODO: Implement strokeStyles for shape layers.
+            // This can either be a new ::before / ::after element with
+            // a transparent background and a border.
+            // OR in some cases it might be an SVG.
+        }
+
 
         // [TEMP] Default dimensions.
         css.width = css.right - css.left;
