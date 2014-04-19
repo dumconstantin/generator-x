@@ -466,6 +466,18 @@
             css.boxShadow.outer.angle = globalStyles.globalLight.angle;
         }
 
+        // TODO: It seems that for shadows the 100% opacity is not 100% CSS opacity
+        // but somewhere around 80%. Experiment with this and try to find a 
+        // good approximation.
+        
+        // TODO: Account for different blend modes for each style. This would be an 
+        // advanced feature and would require a canvas to plot individual features
+        // and an implementation of blend mode algorithms to obtain accurate CSS
+        // values.
+
+        // TODO: Depending on the degree of accuracy the user requires, the layer can be
+        // exported as an image to ensure that all FX styles are 100% accurate.
+
         // TODO: Implement Radial Gradient
         
         // TODO: Implement Angle Gradient
