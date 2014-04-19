@@ -554,6 +554,10 @@
             // OR in some cases it might be an SVG.
         }
 
+        if (false === style._get('path.defaultFill', true)) {
+            css.background.active = false;
+        }
+
 
         // [TEMP] Default dimensions.
         css.width = css.right - css.left;
