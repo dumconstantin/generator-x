@@ -823,6 +823,10 @@
                     this.tag = 'img';
                 }
 
+                if (true !== layer._get('mask.removed', false)) {
+                    this.tag = 'img';
+                }
+
             break;
 
             case 'textLayer':
@@ -1300,19 +1304,16 @@
 
         // Ignore masks for now!
         // TODO: Do not ignore masks.
-        if (true !== layer.mask.removed) {
-            return;
+        if (true !== layer._get('mask.removed', false)) {
+            if (true === layer._get('mask.extendWithWhite', false)) {
+                // Continue, this is partialy supported.
+            } else {
+                return;
+            }
         }
 
         if (true === layer.clipped) {
-            overWriteLayer = layers[index + 1];
-
-            overWrites = {
-                top: overWriteLayer._get('bounds.top', 0),
-                right: overWriteLayer._get('bounds.right', 0),
-                bottom: overWriteLayer._get('bounds.bottom', 0),
-                left: overWriteLayer._get('bounds.left', 0)
-            }
+            return;
         }
 
         storage.push(new Layer(this, layer, overWrites));
