@@ -1,15 +1,18 @@
 (function () {
     "use strict";
 
-    var fs = require('fs'),
+    var 
+
+        fs = require('fs'),
         path = require('path'),
         PNG = require('pngjs').PNG,
+        events = new require('events'),
+
         fonts = {
             'Oswald': 'oswaldbook',
             'IcoMoon': 'icomoonregular',
             'Roboto': 'robotoregular'
         };
-
 
     // GLOBAL TODOs
     // 
@@ -122,7 +125,7 @@
 
 
     // TODO: Spawn a worker to handle the saving of the pixmap.
-    function savePixmap(pixmap, filePath){
+    function savePixmap(pixmap, filePath, emitter){
         var pixels = pixmap.pixels,
             len = pixels.length,
             pixel,
@@ -146,9 +149,13 @@
      
         png.data = pixels;
 
+        png.on('end', function () {
+            emitter.emit('finishedImage');
+        });
+
         png
             .pack()
-            .pipe(fs.createWriteStream(filePath));
+            .pipe(fs.createWriteStream(filePath))
     }
 
     function getCSSFontFamily(fontName) {
@@ -1126,6 +1133,7 @@
         // Store IDs to ensure there is no collision between styles.
         this.cssIds = [];
 
+        this.imagesQueue = [];
 
         this.styles = {
             globalLight: {
@@ -1148,7 +1156,18 @@
             '<body>';
         
         this.footer = '</body></html>';
+
+        // Set listeners.
+        this.events = new events.EventEmitter();
+        this.events.on('finishedImage', function (event) {
+            _this.finishedImage();
+        });
     }
+
+    Structure.prototype.finishedImage = function () {
+        console.log('Finished an image');
+        this.nextImage();
+    };
 
     Structure.prototype.createLayers = function () {
         var _this = this;
@@ -1238,17 +1257,14 @@
                     if (true === fs.existsSync(layer.filePath)) {
 
                         // The image already exists. No need to regenerate it.
-                        // 
+
                     } else {
 
-                        _this.generator.getPixmap(_this.document.id, layer.id, {}).then(
-                            function(pixmap){
-                                savePixmap(pixmap, layer.filePath);
-                            },
-                            function(err){
-                                console.error("Pixmap error:", err);
-                            }
-                        ).done();
+                        _this.imagesQueue.push({ 
+                            id: layer.id, 
+                            filePath: layer.filePath
+                        });
+
                     }
                 }
 
@@ -1262,6 +1278,34 @@
         }
 
         generateImages(this.layers);
+
+        // Being exporting images.
+        this.nextImage();
+    };
+
+    Structure.prototype.nextImage = function () {
+        var _this = this,
+            imageData;
+
+        console.log('Triggering next image.');
+        if (0 === this.imagesQueue.length) {
+
+            console.log('All images have been generated.');
+
+        } else {
+
+            // FIFO
+            imageData = this.imagesQueue.shift();
+
+            this.generator.getPixmap(this.document.id, imageData.id, {}).then(
+                function(pixmap){
+                    savePixmap(pixmap, imageData.filePath, _this.events);
+                },
+                function(err){
+                    console.error("Pixmap error:", err);
+                }
+            ).done();
+        }
     };
 
     Structure.prototype.generateCssIds = function () {
