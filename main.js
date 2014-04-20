@@ -133,6 +133,7 @@
             pixel,
             location,
             png,
+            stream,
             channelNo = pixmap.channelCount;
 
         // Convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
@@ -152,12 +153,34 @@
         png.data = pixels;
 
         png.on('end', function () {
+            stream.end();
             emitter.emit('finishedImage');
         });
 
+        console.log('calling savePixmap for ' + filePath);
+        stream = fs.createWriteStream(filePath);
         png
             .pack()
-            .pipe(fs.createWriteStream(filePath))
+            .pipe(stream);
+    }
+
+    function generateFontFace(font, fontName) {
+        var fontFace = '';
+
+        Object.keys(font).forEach(function (variant) {
+            fontFace += "@font-face {"
+                + "font-family: '" + font[variant] + "'; "
+                + " src: url('fonts/roboto-" + variant + ".eot'); "
+                + " src: url('fonts/roboto-" + variant + ".eot?#iefix') format('embedded-opentype')," 
+                + "     url('fonts/roboto-" + variant + ".woff') format('woff'),"
+                + "    url('fonts/roboto-" + variant + ".ttf') format('truetype'),"
+                + "    url('fonts/roboto-" + variant + ".svg#" + fontName + variant + "') format('svg');"
+                + "font-weight: normal;"
+                + "font-style: normal;"
+                + "}";
+        });
+
+        return fontFace;
     }
 
     function getCSSFontFamily(fontName) {
@@ -165,29 +188,15 @@
         
         switch (fontName) {
             case 'Oswald':
-                font += "\n @font-face {"
-                    + " font-family: 'oswaldbook'; " 
-                    + " src: url('fonts/oswald-regular.eot');"
-                    + " src: url('fonts/oswald-regular.eot?#iefix') format('embedded-opentype'),"
-                    + "     url('fonts/oswald-regular.woff') format('woff'),"
-                    + "     url('fonts/oswald-regular.ttf') format('truetype'),"
-                    + "     url('fonts/oswald-regular.svg#oswaldbook') format('svg');"
-                    + " font-weight: normal;"
-                    + " font-style: normal; " 
-                    + " } \n";
+                font += generateFontFace({
+                    regular: 'oswaldbook'
+                }, 'oswald');
             break;
 
             case 'IcoMoon':
-                font += "@font-face { " 
-                    + " font-family: 'icomoonregular';"
-                    + " src: url('fonts/icomoon.eot');"
-                    + " src: url('fonts/icomoon.eot?#iefix') format('embedded-opentype'),"
-                    + "     url('fonts/icomoon.woff') format('woff'),"
-                    + "     url('fonts/icomoon.ttf') format('truetype'),"
-                    + "     url('fonts/icomoon.svg#icomoonregular') format('svg');"
-                    + " font-weight: normal;"
-                    + " font-style: normal;"
-                    + " } \n";
+                font += generateFontFace({
+                    regular: 'icomoon'
+                }, 'icomoon');
             break;
 
             case 'Futura':
@@ -208,7 +217,7 @@
 
             case 'OpenSans':
                 
-                var openSans = {
+                font += generateFontFace({
                     bold: 'open_sansbold',
                     blackitalic: 'open_sansbold_italic',
                     extrabold: 'open_sansextrabold',
@@ -219,20 +228,7 @@
                     semibold: 'open_sanssemibold',
                     regular: 'open_sansregular',
                     semibolditalic: 'open_sanssemibold_italic',
-                };
-
-                Object.keys(openSans).forEach(function (variant) {
-                    font += "@font-face {"
-                        + "font-family: '" + openSans[variant]+ "'; "
-                        + " src: url('fonts/roboto-" + variant + ".eot'); "
-                        + " src: url('fonts/roboto-" + variant + ".eot?#iefix') format('embedded-opentype')," 
-                        + "     url('fonts/roboto-" + variant + ".woff') format('woff'),"
-                        + "    url('fonts/roboto-" + variant + ".ttf') format('truetype'),"
-                        + "    url('fonts/roboto-" + variant + ".svg#open_sans" + variant + "') format('svg');"
-                        + "font-weight: normal;"
-                        + "font-style: normal;"
-                        + "}";
-                });
+                }, 'open_sans');
 
             break;
 
@@ -246,7 +242,7 @@
 
             case 'Roboto':
 
-                var roboto = {
+                font += generateFontFace({
                     black: 'robotoblack',
                     blackitalic: 'robotoblack_italic',
                     bold: 'robotobold',
@@ -258,20 +254,7 @@
                     regular: 'robotoregular',
                     thin: 'robotothin',
                     thinitalic: 'robotothin_italic'
-                };
-
-                Object.keys(roboto).forEach(function (variant) {
-                    font += "@font-face {"
-                        + "font-family: '" + roboto[variant]+ "'; "
-                        + " src: url('fonts/roboto-" + variant + ".eot'); "
-                        + " src: url('fonts/roboto-" + variant + ".eot?#iefix') format('embedded-opentype')," 
-                        + "     url('fonts/roboto-" + variant + ".woff') format('woff'),"
-                        + "    url('fonts/roboto-" + variant + ".ttf') format('truetype'),"
-                        + "    url('fonts/roboto-" + variant + ".svg#roboto" + variant + "') format('svg');"
-                        + "font-weight: normal;"
-                        + "font-style: normal;"
-                        + "}";
-                });
+                }, 'roboto');
 
             break;
 
@@ -866,6 +849,10 @@
                 }
 
                 if (false === layer._get('strokeStyle.fillEnabled', true)) {
+                    this.tag = 'img';
+                }
+
+                if (1 < layer._get('path.pathComponents', []).length) {
                     this.tag = 'img';
                 }
 
@@ -1504,7 +1491,8 @@
                         .replace(/^\//, 'a')
                         .replace(/^[0-9]/g, 'a')
                         .replace(/\s/g, '-')
-                        .replace(',', '-');
+                        .replace(',', '-')
+                        .replace('/', '');
 
                 if (-1 === _this.cssIds.indexOf(layer.cssId)) {
                     // The ID is unique and can be used.
