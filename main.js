@@ -617,7 +617,6 @@
 
             }());
 
-
             // TODO: Implement the WebKit algorithm to detect the real width of the 
             // text with all the styles attached. 
             // This should do the following:
@@ -639,6 +638,11 @@
             //      if the area wasn't defined by the user, the total area occupied 
             //      by the text which might be different than the boundingBox coordinates
             
+            // It seems that the bounding box for text content is given by the
+            // layer.text.textShape.char = "box" | "paint"
+            // and
+            // layer.text.textShape.bounds = { top | left | bottom | right }
+
             (function () {
                 var bounds = style._get('text.bounds'),
                     boxBounds = style._get('text.boundingBox'),
@@ -655,6 +659,7 @@
                 // the goal of this). If the desiner did create a less than 10 px
                 // container for the text then this might be a bad practice to do
                 // so.
+
                 if (6 > Math.abs(boxWidthDifference)) {
                     // The text does not have a defined area and an be left 
                     // to be arranged through the alignment styles of the parent
@@ -829,6 +834,10 @@
                     this.tag = 'img';
                 }
 
+                if (false === layer._get('strokeStyle.fillEnabled', true)) {
+                    this.tag = 'img';
+                }
+
             break;
 
             case 'textLayer':
@@ -848,7 +857,6 @@
         if (true === clippingMask) {
             this.tag = 'img';
         }
-
         
         // Image layers should be exported also with layer FX.
         // Layer FX can be disabled.
@@ -1464,7 +1472,8 @@
                         .replace(/&/, '')
                         .replace(/^\//, 'a')
                         .replace(/^[0-9]/g, 'a')
-                        .replace(/\s/g, '-');
+                        .replace(/\s/g, '-')
+                        .replace(',', '-');
 
                 if (-1 === _this.cssIds.indexOf(layer.cssId)) {
                     // The ID is unique and can be used.
