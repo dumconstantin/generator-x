@@ -898,6 +898,40 @@
             structure.createLayers(this.siblings, layer.layers);
         }
 
+        // The boundries are given by the topmost layer boundries (without FX)
+        // and bottomost layer boundries.
+        // Calculate the container boundries.
+        if ('layerSection' === layer.type && 0 !== this.siblings.length) {
+            (function () {
+                var topmost = _this.siblings[0].css.top,
+                    rightmost = _this.siblings[0].css.right,
+                    leftmost = _this.siblings[0].css.left,
+                    bottomost = _this.siblings[0].css.bottom;
+
+                _this.siblings.forEach(function (sibling) {
+                    if (topmost > sibling.css.top) {
+                        topmost = sibling.css.top
+                    }
+                    if (bottomost < sibling.css.bottom) {
+                        bottomost = sibling.css.bottom
+                    }
+                    if (leftmost > sibling.css.left) {
+                        leftmost = sibling.css.left;
+                    }
+                    if (rightmost < sibling.css.right) {
+                        rightmost = sibling.css.right;
+                    }
+                });
+
+                _this.css.top = topmost;
+                _this.css.left = leftmost;
+                _this.css.bottom = bottomost;
+                _this.css.right = rightmost;
+                _this.css.width = rightmost - leftmost;
+                _this.css.height = bottomost - topmost;
+            }());
+            
+        }
     }
 
     Layer.prototype.getCSSName = function (name) {
