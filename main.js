@@ -154,10 +154,13 @@
 
         png.on('end', function () {
             stream.end();
-            emitter.emit('finishedImage');
+            emitter.emit('finishedImage', {
+                width: pixmap.width,
+                height: pixmap.height
+            });
         });
 
-        console.log('calling savePixmap for ' + filePath);
+        console.log('Creating ' + filePath);
         stream = fs.createWriteStream(filePath);
         png
             .pack()
@@ -903,6 +906,7 @@
         // Calculate the container boundries.
         if ('layerSection' === layer.type && 0 !== this.siblings.length) {
             (function () {
+
                 var topmost = _this.siblings[0].css.top,
                     rightmost = _this.siblings[0].css.right,
                     leftmost = _this.siblings[0].css.left,
@@ -1318,7 +1322,10 @@
         // Store IDs to ensure there is no collision between styles.
         this.cssIds = [];
 
+        // Image generation 
         this.imagesQueue = [];
+        this.generatingImage = false;
+        this.lastImageGenerated = {};
 
         this.styles = {
             globalLight: {
@@ -1344,15 +1351,8 @@
 
         // Set listeners.
         this.events = new events.EventEmitter();
-        this.events.on('finishedImage', function (event) {
-            _this.finishedImage();
-        });
+        this.events.on('finishedImage', this.finishedImage.bind(this));
     }
-
-    Structure.prototype.finishedImage = function () {
-        console.log('Finished an image');
-        this.nextImage();
-    };
 
     Structure.prototype.createLayers = function (storage, layers) {
         var _this = this,
@@ -1467,7 +1467,8 @@
 
                         _this.imagesQueue.push({ 
                             id: layer.id, 
-                            filePath: layer.filePath
+                            filePath: layer.filePath,
+                            layer: layer
                         });
 
                     }
@@ -1487,19 +1488,46 @@
         // Being exporting images.
         this.nextImage();
     };
+    
+    Structure.prototype.finishedImage = function (imageData) {
+        var layer = this.lastImageGenerated.layer;
+        
+        console.log('Finished an image');
+        
+        // PhotoShop does not give the real boundsWithFX of the end image.
+        // PhotoShop sometimes crops almost competely transaprent
+        // pixels. BoundsWithFX is purely informative regarding the extent
+        // to which FX styles might stretch.
+
+        layer.css.width = imageData.width;
+        layer.css.height = imageData.height;
+
+        this.generatingImage = false;
+
+        this.nextImage();
+    };
 
     Structure.prototype.nextImage = function () {
         var _this = this,
             imageData;
 
+        if (true === this.generatingImage) {
+            console.log('Image is currently generating. The image generation is recursive.');
+            return;
+        }
+
         if (0 === this.imagesQueue.length) {
 
             console.log('All images have been generated.');
+            this.events.emit('imagesFinished');
 
         } else {
 
+            this.generatingImage = true;
+
             // FIFO
             imageData = this.imagesQueue.shift();
+            this.lastImageGenerated = imageData;
 
             this.generator.getPixmap(this.document.id, imageData.id, {}).then(
                 function(pixmap){
@@ -1566,11 +1594,13 @@
         structure.generateCssIds();
         structure.generateImages();
 
-        structure.saveToJSON();
+        structure.events.on('imagesFinished', function () {
+            structure.saveToJSON();
 
-        structure.refreshCode();
+            structure.refreshCode();
 
-        structure.output();
+            structure.output();
+        })
     }
 
     // Verificarea de float este simpla:
