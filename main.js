@@ -363,7 +363,7 @@
     // in the structure tree, allocate different cssNames to avoid id collision
 
 
-    function parseCSS(style, globalStyles, overWrites) {
+    function parseCSS(style, globalStyles, cssOverwrites) {
 
         // TODO: Add default styles for all the bellow properties.
 
@@ -477,8 +477,8 @@
             },
             textColor;
 
-        Object.keys(overWrites).forEach(function (property) {
-            css[property] = overWrites[property];
+        Object.keys(cssOverwrites).forEach(function (property) {
+            css[property] = cssOverwrites[property];
         });
 
         // -----------------
@@ -791,7 +791,7 @@
         };
     }());
 
-    function Layer(structure, layer, overWrites) {
+    function Layer(structure, layer, cssOverwrites, clippingMask) {
         var _this = this,
             parsedCSS;
 
@@ -807,7 +807,7 @@
         // Raw css styles. 
         // This are similar to a "computed" style. Will include
         // all element styles which then can be further optimised.
-        this.css = parseCSS(layer, structure.styles, overWrites);
+        this.css = parseCSS(layer, structure.styles, cssOverwrites);
 
         // Layer type specific configuration
         switch (layer.type) {
@@ -842,6 +842,11 @@
                 console.log('The layer type "' + layer.type + '" is no recognised.');
             break;
         }
+
+        if (true === clippingMask) {
+            this.tag = 'img';
+        }
+
         
         // Image layers should be exported also with layer FX.
         // Layer FX can be disabled.
@@ -862,9 +867,7 @@
 
         // Parse children layers.
         if (undefined !== layer.layers) {
-            layer.layers.forEach(function (siblingLayer, index) {
-                structure.addLayer(_this.siblings, layer.layers, siblingLayer, index);
-            });
+            structure.createLayers(this.siblings, layer.layers);
         }
 
     }
@@ -1289,34 +1292,38 @@
         this.nextImage();
     };
 
-    Structure.prototype.createLayers = function () {
-        var _this = this;
+    Structure.prototype.createLayers = function (storage, layers) {
+        var _this = this,
+            enteredClippingMask = false;
 
-        this.document.layers.forEach(function (layer, index) {
-            _this.addLayer(_this.layers, _this.document.layers, layer, index);
-        });
+        layers.forEach(function (layer, index) {
+            var cssOverwrites = {},
+                clippingMask = false;
 
-    };
+            // Ignore masks for now!
+            // TODO: Do not ignore masks.
+            if (true !== layer._get('mask.removed', false)) {
+                if (true === layer._get('mask.extendWithWhite', false)) {
+                    // Continue, this is partialy supported.
+                } else {
+                    return;
+                }
+            }
 
-    Structure.prototype.addLayer = function (storage, layers, layer, index) {
-        var overWrites = {},
-            overWriteLayer;
-
-        // Ignore masks for now!
-        // TODO: Do not ignore masks.
-        if (true !== layer._get('mask.removed', false)) {
-            if (true === layer._get('mask.extendWithWhite', false)) {
-                // Continue, this is partialy supported.
-            } else {
+            if (true === layer.clipped) {
+                enteredClippingMask = true;
                 return;
             }
-        }
 
-        if (true === layer.clipped) {
-            return;
-        }
+            // This layer is not a clipping mask but the layers before it were.
+            // Export this as an image.
+            if (true === enteredClippingMask) {
+                clippingMask = true;
+                enteredClippingMask = false;
+            }
 
-        storage.push(new Layer(this, layer, overWrites));
+            storage.push(new Layer(_this, layer, cssOverwrites, clippingMask));
+        });
     };
 
     Structure.prototype.linkLayers = function () {
@@ -1423,7 +1430,6 @@
         var _this = this,
             imageData;
 
-        console.log('Triggering next image.');
         if (0 === this.imagesQueue.length) {
 
             console.log('All images have been generated.');
@@ -1490,7 +1496,7 @@
             generator: generator
         });        
 
-        structure.createLayers();
+        structure.createLayers(structure.layers, structure.document.layers);
         structure.linkLayers();
 
         structure.generateCssIds();
