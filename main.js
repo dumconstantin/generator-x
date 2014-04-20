@@ -741,20 +741,22 @@
             textRanges.forEach(function (range) {
                 var extractedText = text.substr(range.from, range.to - range.from),
                     styles = "",
-                    fontFamily = range.textStyle.fontName,
-                    fontVariant = range.textStyle.fontStyleName;
-
+                    fontFamily = range.textStyle.fontName.toLowerCase(),
+                    fontVariant = range.textStyle.fontStyleName.replace(' ', '_').toLowerCase();
 
                 // For some reason Photoshop sometimes returns a duplicated
                 // text range.
-                if (lastParsedIndex !== range.to) {
+                if (lastParsedIndex === range.to) {
                     return;
                 }
 
                 lastParsedIndex = range.to;
 
-                styles += 'font-family: ' 
-                    + fontFamily.toLowerCase() + fontVariant.replace(' ', '_').toLowerCase();
+                styles += 'font-family: ' + fontFamily.toLowerCase();
+
+                if ('regular' !== fontVariant) {
+                    styles += fontVariant + ';';
+                }
 
                 // TODO: Add the ability to combine bold, italic or 
                 // other styles on a single text. This might require
