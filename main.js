@@ -206,6 +206,36 @@
 
             break;
 
+            case 'OpenSans':
+                
+                var openSans = {
+                    bold: 'open_sansbold',
+                    blackitalic: 'open_sansbold_italic',
+                    extrabold: 'open_sansextrabold',
+                    extrabolditalic: 'open_sansextrabold_italic',
+                    italic: 'open_sansitalic',
+                    light: 'open_sanslight',
+                    lightitalic: 'open_sanslight_italic',
+                    semibold: 'open_sanssemibold',
+                    regular: 'open_sansregular',
+                    semibolditalic: 'open_sanssemibold_italic',
+                };
+
+                Object.keys(openSans).forEach(function (variant) {
+                    font += "@font-face {"
+                        + "font-family: '" + openSans[variant]+ "'; "
+                        + " src: url('fonts/roboto-" + variant + ".eot'); "
+                        + " src: url('fonts/roboto-" + variant + ".eot?#iefix') format('embedded-opentype')," 
+                        + "     url('fonts/roboto-" + variant + ".woff') format('woff'),"
+                        + "    url('fonts/roboto-" + variant + ".ttf') format('truetype'),"
+                        + "    url('fonts/roboto-" + variant + ".svg#open_sans" + variant + "') format('svg');"
+                        + "font-weight: normal;"
+                        + "font-style: normal;"
+                        + "}";
+                });
+
+            break;
+
             case 'Myriad':
 
             break;
@@ -589,7 +619,8 @@
             
             // 7. However, if leading is set to "auto", the actual leading number is 120% of the font size.
 
-            css.lineHeight = (css.fontSize + style._get('text.textStyleRange[0].textStyle.leading', 30) / 2) - 1;
+            // css.lineHeight = (css.fontSize + style._get('text.textStyleRange[0].textStyle.leading', 30) / 2) - 1;
+            css.lineHeight = (css.fontSize + css.fontSize / 2) - 1;
 
             /*
             (function () { 
