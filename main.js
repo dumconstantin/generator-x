@@ -15,7 +15,8 @@
         fs = require('fs'),
         path = require('path'),
         PNG = require('pngjs').PNG,
-        events = new require('events');
+        events = new require('events'),
+        sizeOf = require('image-size');
 
     // GLOBAL TODOs
     // 
@@ -886,55 +887,23 @@
             this.css.background.active = false;
             this.css.border.active = false;
 
+            // Used for reestablishing boundries after image generation.
             if (undefined !== layer.boundsWithFX) {
-                this.css.top = layer.boundsWithFX.top;
-                this.css.left = layer.boundsWithFX.left;
-                this.css.bottom = layer.boundsWithFX.bottom;
-                this.css.right = layer.boundsWithFX.right;
-                this.css.width = this.css.right - this.css.left;
-                this.css.height = this.css.bottom - this.css.top;
+                this.boundsWithFX = layer.boundsWithFX
             }
+
+            /*
+            this.css.top = layer.boundsWithFX.top;
+            this.css.left = layer.boundsWithFX.left;
+            this.css.bottom = layer.boundsWithFX.bottom;
+            this.css.right = layer.boundsWithFX.right;
+            this.css.width = this.css.right - this.css.left;
+            this.css.height = this.css.bottom - this.css.top; */
         }
 
         // Parse children layers.
         if (undefined !== layer.layers) {
             structure.createLayers(this.siblings, layer.layers);
-        }
-
-        // The boundries are given by the topmost layer boundries (without FX)
-        // and bottomost layer boundries.
-        // Calculate the container boundries.
-        if ('layerSection' === layer.type && 0 !== this.siblings.length) {
-            (function () {
-
-                var topmost = _this.siblings[0].css.top,
-                    rightmost = _this.siblings[0].css.right,
-                    leftmost = _this.siblings[0].css.left,
-                    bottomost = _this.siblings[0].css.bottom;
-
-                _this.siblings.forEach(function (sibling) {
-                    if (topmost > sibling.css.top) {
-                        topmost = sibling.css.top
-                    }
-                    if (bottomost < sibling.css.bottom) {
-                        bottomost = sibling.css.bottom
-                    }
-                    if (leftmost > sibling.css.left) {
-                        leftmost = sibling.css.left;
-                    }
-                    if (rightmost < sibling.css.right) {
-                        rightmost = sibling.css.right;
-                    }
-                });
-
-                _this.css.top = topmost;
-                _this.css.left = leftmost;
-                _this.css.bottom = bottomost;
-                _this.css.right = rightmost;
-                _this.css.width = rightmost - leftmost;
-                _this.css.height = bottomost - topmost;
-            }());
-            
         }
     }
 
@@ -1456,7 +1425,7 @@
                     // TODO: Add a layer hashsum at the end of the layer to ensure that
                     // if the layer has changed then the image should be regenerated as well.
                     
-                    layer.fileName = _this.psdName + '_' + layer.parent.cssId + '_' + layer.cssId + '.png';
+                    layer.fileName = _this.psdName.replace('.', '_') + '_' + layer.parent.cssId + '_' + layer.cssId + '.png';
                     layer.filePath = _this.folders.images + layer.fileName;
 
                     if (true === fs.existsSync(layer.filePath)) {
@@ -1493,14 +1462,6 @@
         var layer = this.lastImageGenerated.layer;
         
         console.log('Finished an image');
-        
-        // PhotoShop does not give the real boundsWithFX of the end image.
-        // PhotoShop sometimes crops almost competely transaprent
-        // pixels. BoundsWithFX is purely informative regarding the extent
-        // to which FX styles might stretch.
-
-        layer.css.width = imageData.width;
-        layer.css.height = imageData.height;
 
         this.generatingImage = false;
 
@@ -1573,6 +1534,146 @@
         generateCssIds(this.layers);
     };
 
+    Structure.prototype.refreshImageBoundries = function () {
+
+        function refreshImageBoundries(layers) {
+
+            layers.forEach(function (layer) {
+                var realImageSize,
+                    minusLeft = 0,
+                    minusTop = 0;
+
+                if ('img' === layer.tag) {
+                    try {
+                        realImageSize = sizeOf(layer.filePath);
+                    } catch (error) {
+                        console.log('Dimensions could not be read on ' + layer.filePath);
+                    }
+
+                    if (undefined !== realImageSize) {
+
+                        if (undefined !== layer.boundsWithFX) {
+                            // Important point: 
+                            // FX layers do not necessary have an even spread of effects on both sides of the
+                            // initial image/shape. This means that the left side effect might have a smaller
+                            // width than the right side effect. When Photoshop gives the boundsWithFX it gives
+                            // an estimation of what those widths might be. When exporting the image we sometimes
+                            // get difference values than the boundsWithFX and also, we don't know were exactly
+                            // in the generated image is the initial image/shape without the FX.
+                            // This leads to a difficult problem of finding the exact FX widths of the exported
+                            // image.
+                            // 
+                            // There are 3 options:
+                            // 1) Augment the Photoshop file export through the Generator to give the real 
+                            // widths of the FX once they have been transformed to bitmap and the image
+                            // was cropped.
+                            // 2) Create a image recognition system that will take the image/shape version
+                            // without the FX and the image/shape version with FX and try to find the initial
+                            // boundries within the FX version. 
+                            // 3) Calculate a procentage of the estimated differences and apply it to the
+                            // exported image width E.g. If boundsWithFX give a 200px width and 20px left FX
+                            // then on an exported 190px width we can assume the left FX will be 
+                            // 20 * 100 / 200 = 10%. We apply 10% on 190px and we get an estimated left FX
+                            // of 18px. This will work most of the time but might have some misses from 
+                            // time to time.
+                            // 
+                            // The bellow is an implementation of option 3).
+                            (function () {
+                                var topFXDifference = layer.css.top - layer.boundsWithFX.top,
+                                    leftFXDifference = layer.css.left - layer.boundsWithFX.left,
+                                    widthFXDifference = (layer.boundsWithFX.right - layer.boundsWithFX.left) - layer.css.width,
+                                    heightFXDifference = (layer.boundsWithFX.bottom - layer.boundsWithFX.top) - layer.css.height,
+                                    leftProcent = leftFXDifference / widthFXDifference,
+                                    topProcent = topFXDifference / heightFXDifference,
+                                    noImageFX_RealImageWidthDifference = realImageSize.width - layer.css.width,
+                                    noImageFX_RealImageHeightDifference = realImageSize.height - layer.css.height;
+
+                                minusLeft = noImageFX_RealImageWidthDifference * leftProcent;
+                                minusTop = noImageFX_RealImageHeightDifference * topProcent;
+
+                                // It seems that Photoshop is usually down a pixel or so.
+                                minusLeft = Math.ceil(minusLeft - 1);
+                                minusTop = Math.ceil(minusTop - 1);
+
+                            }());
+                        }
+
+                        layer.css.left -= minusLeft;
+                        layer.css.top -= minusTop;
+
+                        layer.css.width = realImageSize.width;
+                        layer.css.height = realImageSize.height;
+
+                        layer.css.right = layer.css.left + layer.css.width;
+                        layer.css.bottom = layer.css.top + layer.css.height;
+                    }
+                }
+
+                refreshImageBoundries(layer.siblings);
+            });
+
+        }
+
+        refreshImageBoundries(this.layers);
+    };
+
+    Structure.prototype.refreshParentBoundries = function () {
+
+        // Approach is done bottom-up to first get the lowest level
+        // grouped parsed and then adjusting the top level ones.
+
+        // The boundries are given by the topmost layer boundries (without FX)
+        // and bottomost layer boundries.
+        // Calculate the container boundries.
+        
+        function computeBoundries(section) {
+            var topmost = section.siblings[0].css.top,
+                rightmost = section.siblings[0].css.right,
+                leftmost = section.siblings[0].css.left,
+                bottomost = section.siblings[0].css.bottom;
+
+            section.siblings.forEach(function (sibling) {
+
+                if ('layerSection' === sibling.type && 0 !== sibling.siblings.length) {
+                    computeBoundries(sibling);
+                }
+
+                if (topmost > sibling.css.top) {
+                    topmost = sibling.css.top
+                }
+                if (bottomost < sibling.css.bottom) {
+                    bottomost = sibling.css.bottom
+                }
+                if (leftmost > sibling.css.left) {
+                    leftmost = sibling.css.left;
+                }
+                if (rightmost < sibling.css.right) {
+                    rightmost = sibling.css.right;
+                }
+
+            });
+
+            section.css.top = topmost;
+            section.css.left = leftmost;
+            section.css.bottom = bottomost;
+            section.css.right = rightmost;
+            section.css.width = rightmost - leftmost;
+            section.css.height = bottomost - topmost;
+
+        }
+
+        // These are the top most layers AKA sections.
+        this.layers.forEach(function (layer) {
+
+            if ('layerSection' === layer.type && 0 !== layer.siblings.length) {
+                computeBoundries(layer);
+            }
+
+        });
+    };
+
+
+
     function runGenerator(document, generator) {
         var structure = new Structure({
             folders: {
@@ -1589,18 +1690,25 @@
         });        
 
         structure.createLayers(structure.layers, structure.document.layers);
+
         structure.linkLayers();
 
         structure.generateCssIds();
-        structure.generateImages();
 
         structure.events.on('imagesFinished', function () {
+
+            structure.refreshImageBoundries();
+
+            structure.refreshParentBoundries();
+
             structure.saveToJSON();
 
             structure.refreshCode();
 
             structure.output();
-        })
+        });
+
+        structure.generateImages();
     }
 
     // Verificarea de float este simpla:
