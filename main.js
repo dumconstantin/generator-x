@@ -268,6 +268,16 @@
         return font;
     }
 
+    /**
+     * Convert camelCase strings to hyphen separated words.
+     *
+     * @param  {string} name The camelCase words.
+     * @return {string}      The hyphen separated words
+     */
+    function convertFromCamelCase(camelCaseWords) {
+        return camelCaseWords.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+    }
+
     function createBoxShadow(shadowStyles, shadowType, elementType) {
         var property = "",
             shadow = shadowStyles[shadowType],
@@ -804,53 +814,87 @@
 
     /**
      * Creates an instance of Layer.
+     * 
+     * A Layer instance is the representation of a parsed PSD layer. It will generate
+     * the CSS and HTML code necessary to display the PSD layer. Also will provide 
+     * information to other Layers or Parent Layers for proper boundry detection and
+     * optimal CSS output.
      *
      * @constructor
      * @this {Layer}
      * @param {Structure} structure The Structure instance that stores this layer
      * @param {JSON} layer The exported JSON data from PSD that comprises a layer
-     * @return { } [description]
+     * @param {clippingMask} clippingMask True if the current layer has other clipping
+     *                                    layers before it and needs to be exported 
+     *                                    as an image.
+     *                                                                   
+     * @return {Layer} The created layer instance.
      */
     function Layer(structure, layer, clippingMask) {
         var _this = this,
             parsedCSS;
 
         this.id = layer.id;
+
+        // Sibling Layers follow the PSD folder hierachy. Sibling Layers will
+        // be nested HTML elements and the current Layer will be their parent.
         this.siblings = [];
+
+        // Hidden layers don't need to be shown/included in the output HTML/CSS.
+        // An exception will be when Semantic Tagging will enable interactive 
+        // elements like hover, tab, etc.
         this.visible = layer.visible;
+
         this.name = layer.name;
         this.index = layer.index;
         this.type = layer.type;
         this.text = '';
         this.structure = structure;
 
-        // Raw css styles. 
-        // This are similar to a "computed" style. Will include
-        // all element styles which then can be further optimised.
+        // Will get all possible CSS styles. This is similar to viewing
+        // the "computed" Inspector tab.
         this.css = parseCSS(layer, structure.styles);
 
-        // Layer type specific configuration
         switch (layer.type) {
+
+            // layer.type = "layerSection" means the layer is a Group in PSD
             case 'layerSection':
+
                 this.tag = 'div';
+
             break;
 
             case 'shapeLayer':
+
                 this.tag = 'div';
 
-                // TODO: This means the path might require to be produced in SVG somehow
+                // origin.type = 'unknown' means the shape does not have enough information
+                // to represent it in CSS.
                 if ('unknown' === layer._get('path.pathComponents[0].origin.type', 'shapeLayer')) {
                     this.tag = 'img';
                 }
 
+                // mask.removed = false means that it is a clipping or another
+                // type of mask. Until support is made for such layers, it will be treated as an
+                // image.
                 if (true !== layer._get('mask.removed', false)) {
                     this.tag = 'img';
                 }
 
+                // fillEnabled = false means that the shape has a transparent
+                // background but also might contain additional styles specific to
+                // shapeLayers that are not yet supported.
+                // 
+                // @TODO: Add support for shapeLayer strokeStyles.
                 if (false === layer._get('strokeStyle.fillEnabled', true)) {
                     this.tag = 'img';
                 }
 
+                // pathComponents > 1 means the shapeLayer is composite and will require
+                // additional HTML elements to produce it OR be resolved through SVG.
+                // 
+                // @TODO: Generate the shapeLayer by parsing the pathComponents and creating
+                // for each pathComponent a new layer.
                 if (1 < layer._get('path.pathComponents', []).length) {
                     this.tag = 'img';
                 }
@@ -858,10 +902,12 @@
             break;
 
             case 'textLayer':
+                // @TODO: Decide if the text element should be a <span> or a <p>
                 this.tag = 'span';
                 this.text = parseText(layer);
             break;
 
+            // layer.type = 'layer' means the layer is a bitmap in PSD
             case 'layer':
                 this.tag = 'img';
             break;
@@ -871,43 +917,38 @@
             break;
         }
 
+        // @TODO: Make clipping mask layers work as overflow:hidden and have
+        // all other layers be generated as siblings of the current layer. 
         if (true === clippingMask) {
             this.tag = 'img';
         }
         
-        // Image layers should be exported also with layer FX.
-        // Layer FX can be disabled.
         if ('img' === this.tag) {
+
+            // Disactivate all FX from the element. These will be exported as a 
+            // bitmap from PSD anyway.
             this.css.boxShadow.active = false;
             this.css.background.active = false;
             this.css.border.active = false;
 
-            // Used for reestablishing boundries after image generation.
+            // Used for estimated the real boundries of the element 
+            // inside the generated FX image.
+            // @see Structure.refreshImageBoundries
             if (undefined !== layer.boundsWithFX) {
                 this.boundsWithFX = layer.boundsWithFX
             }
-
-            /*
-            this.css.top = layer.boundsWithFX.top;
-            this.css.left = layer.boundsWithFX.left;
-            this.css.bottom = layer.boundsWithFX.bottom;
-            this.css.right = layer.boundsWithFX.right;
-            this.css.width = this.css.right - this.css.left;
-            this.css.height = this.css.bottom - this.css.top; */
         }
 
-        // Parse children layers.
+        // Create the nested Layers.
         if (undefined !== layer.layers) {
             structure.createLayers(this.siblings, layer.layers);
         }
+
+        return this;
     }
 
-    Layer.prototype.getCSSName = function (name) {
-        return name.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-    };
-
     Layer.prototype.getCSSProperty = function (name) {
-        var property = this.getCSSName(name) + ': ',
+        var property = convertFromCamelCase(name) + ': ',
             after = "",
             value = this.css[name],
             _this = this;
@@ -1181,7 +1222,7 @@
                 if ('boxShadow' === property && 'textLayer' === _this.type) {
                     before += '\ttext-shadow: ' + parsedCSS.after + ';\n';
                 } else {
-                    before += '\t' + _this.getCSSName(property) + ': ' + parsedCSS.after + ';\n';
+                    before += '\t' + convertFromCamelCase(property) + ': ' + parsedCSS.after + ';\n';
                 }
             }
             
