@@ -1591,9 +1591,21 @@
                                 minusLeft = noImageFX_RealImageWidthDifference * leftProcent;
                                 minusTop = noImageFX_RealImageHeightDifference * topProcent;
 
+                                // NaN tests
+                                if (minusLeft !== minusLeft) {
+                                    minusLeft = 0;
+                                }
+                                if (minusTop !== minusTop) {
+                                    minusTop = 0;
+                                }
+
                                 // It seems that Photoshop is usually down a pixel or so.
-                                minusLeft = Math.ceil(minusLeft - 1);
-                                minusTop = Math.ceil(minusTop - 1);
+                                if (0 !== minusLeft) {
+                                    minusLeft = Math.ceil(minusLeft - 1);
+                                }
+                                if (0 !== minusTop) {
+                                    minusTop = Math.ceil(minusTop - 1);
+                                }
 
                             }());
                         }
@@ -1699,7 +1711,7 @@
 
             structure.refreshImageBoundries();
 
-            structure.refreshParentBoundries();
+            // structure.refreshParentBoundries();
 
             structure.saveToJSON();
 
