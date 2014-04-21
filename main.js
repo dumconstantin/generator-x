@@ -124,48 +124,6 @@
         return stringified;
     }
 
-
-    // TODO: Spawn a worker to handle the saving of the pixmap.
-    function savePixmap(pixmap, filePath, emitter){
-        var pixels = pixmap.pixels,
-            len = pixels.length,
-            pixel,
-            location,
-            png,
-            stream,
-            channelNo = pixmap.channelCount;
-
-        // Convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
-        for(location = 0; location < len; location += channelNo){
-            pixel = pixels[location];
-            pixels[location]   = pixels[location + 1];
-            pixels[location + 1] = pixels[location + 2];
-            pixels[location + 2] = pixels[location + 3];
-            pixels[location + 3] = pixel;
-        }
-
-        var png = new PNG({
-            width: pixmap.width,
-            height: pixmap.height
-        });
-     
-        png.data = pixels;
-
-        png.on('end', function () {
-            stream.end();
-            emitter.emit('finishedImage', {
-                width: pixmap.width,
-                height: pixmap.height
-            });
-        });
-
-        console.log('Creating ' + filePath);
-        stream = fs.createWriteStream(filePath);
-        png
-            .pack()
-            .pipe(stream);
-    }
-
     function generateFontFace(font, fontName) {
         var fontFace = '';
 
@@ -400,7 +358,6 @@
                     masterActive: style._get('layerEffects.masterFXSwitch', true),
                     active: style._has('fill'),
                     color: {
-                        active: style._get('fill.color'),
                         red: style._get('fill.color.red', 255),
                         green: style._get('fill.color.green', 255),
                         blue: style._get('fill.color.blue', 255)
@@ -1079,7 +1036,7 @@
 
                         property += ')';
 
-                    } else if (true == value.color.active) {
+                    } else if (undefined !== value.color.red) {
                         property += 'rgb('
                             + Math.round(value.color.red) + ', '
                             + Math.round(value.color.green) + ', '
@@ -1327,7 +1284,8 @@
     };
 
     /**
-     * Generates the Layer HTML code. 
+     * Generates the Layer HTML code.
+     * 
      * @return {string} The fully generated HTML code.
      */
     Layer.prototype.getHTML = function () {
@@ -1401,7 +1359,7 @@
         // Image generation properties.
         this.imagesQueue = [];
         this.generatingImage = false;
-        this.lastImageGenerated = {};
+        this.currentGeneratedImage = {};
 
         // In Photoshop layers adjust their behaviours by using global settings
         // that can be overwritten by local settings.
@@ -1426,9 +1384,8 @@
         
         this.footer = '</body></html>';
 
-        // Set listeners.
+        // Instantiate an internal event system.
         this.events = new events.EventEmitter();
-        this.events.on('finishedImage', this.finishedImage.bind(this));
 
         return this;
     }
@@ -1483,8 +1440,16 @@
         return this;
     };
 
+    /**
+     * Create linkages between layers to be able to reach a parent
+     * from within a layer or navigate through next/prev layers that sit
+     * on the same level.
+     * 
+     * @return {undefined}
+     */
     Structure.prototype.linkLayers = function () {
 
+        // Recursive function.
         function linkLayers(layers, parent) {
 
             layers.forEach(function (layer, index) {
@@ -1506,24 +1471,56 @@
         linkLayers(this.layers, this.parent);
     };
 
-    Structure.prototype.refreshCode = function () {
-        var _this = this;
-
-        // Reset html and css
-        this.html = "";
-        this.css = "";
+    /**
+     * Generate the output ready full HTML and CSS code by 
+     * requesting it from each Layer.
+     * 
+     * @return {undefined}
+     */
+    Structure.prototype.generateCode = function () {
+        var html = '',
+            css = '';
 
         this.layers.forEach(function (layer) {
-            _this.html += layer.getHTML();
-            _this.css += layer.getCSS();
+            html += layer.getHTML();
+            css += layer.getCSS();
         });
 
-        this.html = this.header + this.html + this.footer;
+        html = this.header + html + this.footer;
+
+        return {
+            html: html,
+            css: css
+        };
     };
 
-    Structure.prototype.saveToJSON = function () {
+    /**
+     * Write the HTML and CSS code to files.
+     *
+     * @param  {object} code Has the following properties
+     *                       .html : The fully generated HTMLcode
+     *                       .css  : The fully generated CSS code
+     * @return {undefined}
+     */
+    Structure.prototype.outputCode = function (code) {
+        
+        fs.writeFileSync(this.files.html, code.html);
+        fs.writeFileSync(this.files.css, code.css);
+
+        console.log('Index.html and style.css were created.');
+    };
+
+    /**
+     * Save the received document and the generated structure in JSON
+     * files to support the debugging process.
+     * 
+     * @return {undefined}
+     */
+    Structure.prototype.saveStructureToJSON = function () {
 
         fs.writeFileSync(this.files.document, stringify(this.document));
+
+        // Generate the structure without the circular objects.
         fs.writeFileSync(
             this.files.structure, 
             stringify(this, ['parent', 'prev', 'next', 'document', 'generator', 'structure'])
@@ -1533,22 +1530,24 @@
         console.log('Saved parsed structure to "' + this.files.structure + '"');
     };
 
-    Structure.prototype.output = function () {
-        fs.writeFileSync(this.files.html, this.html);
-        fs.writeFileSync(this.files.css, this.css);
-        console.log('Index.html and style.css were created.');
-    };
-
-    Structure.prototype.generateImages = function () {
+    /**
+     * Queue bitmap layers that need to be created into images.
+     * The process begings by calling:
+     * @see  startImageGeneration
+     * 
+     * @return {undefined} [description]
+     */
+    Structure.prototype.queueImagesForGeneration = function () {
         var _this = this;
 
-        function generateImages(layers) {
+        // Recursive function.
+        function queueImages(layers) {
 
             layers.forEach(function (layer) {
                 
                 if ('img' === layer.tag) {
                     
-                    // TODO: Add a layer hashsum at the end of the layer to ensure that
+                    // @TODO: Add a layer hashsum at the end of the layer to ensure that
                     // if the layer has changed then the image should be regenerated as well.
                     
                     layer.fileName = _this.psdName.replace(/\./g, '_') + '_' + layer.parent.cssId + '_' + layer.cssId + '.png';
@@ -1570,27 +1569,23 @@
                 }
 
                 if (0 !== layer.siblings.length) {
-                    generateImages(layer.siblings);
+                    queueImages(layer.siblings);
                 } else {
-                    // The no further siblings must be checked for images.
+                    // There are no further siblings must be checked for images.
                 }
+
             });
         
         }
 
-        generateImages(this.layers);
-
-        // Being exporting images.
-        this.nextImage();
+        queueImages(this.layers);
     };
-    
-    Structure.prototype.finishedImage = function (imageData) {
-        var layer = this.lastImageGenerated.layer;
-        
-        console.log('Finished an image');
 
-        this.generatingImage = false;
-
+    /**
+     * Start generating images based on the image queue.
+     * @return {undefined}
+     */
+    Structure.prototype.startImageGeneration = function () {
         this.nextImage();
     };
 
@@ -1613,18 +1608,74 @@
             this.generatingImage = true;
 
             // FIFO
-            imageData = this.imagesQueue.shift();
-            this.lastImageGenerated = imageData;
+            this.currentGeneratedImage = this.imagesQueue.shift();
 
-            this.generator.getPixmap(this.document.id, imageData.id, {}).then(
+            this.generator.getPixmap(this.document.id, this.currentGeneratedImage.id, {}).then(
                 function(pixmap){
-                    savePixmap(pixmap, imageData.filePath, _this.events);
+
+                    _this.savePixmap(pixmap);
+
                 },
                 function(err){
                     console.error("Pixmap error:", err);
                 }
             ).done();
         }
+    };
+
+    // TODO: Spawn a worker to handle the saving of the pixmap.
+    Structure.prototype.savePixmap = function(pixmap) {
+        var _this = this,
+            filePath = _this.currentGeneratedImage.filePath,
+            pixels = pixmap.pixels,
+            len = pixels.length,
+            pixel,
+            location,
+            png,
+            stream,
+            channelNo = pixmap.channelCount;
+
+        // Convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
+        for(location = 0; location < len; location += channelNo){
+            pixel = pixels[location];
+            pixels[location]   = pixels[location + 1];
+            pixels[location + 1] = pixels[location + 2];
+            pixels[location + 2] = pixels[location + 3];
+            pixels[location + 3] = pixel;
+        }
+
+        png = new PNG({
+            width: pixmap.width,
+            height: pixmap.height
+        });
+     
+        png.data = pixels;
+
+        png.on('end', function () {
+            stream.end();
+
+            _this.finishedImage({
+                width: pixmap.width,
+                height: pixmap.height
+            });
+        });
+
+        console.log('Creating ' + filePath);
+        stream = fs.createWriteStream(filePath);
+        png
+            .pack()
+            .pipe(stream);
+    };
+
+
+    Structure.prototype.finishedImage = function (imageData) {
+        var layer = this.currentGeneratedImage.layer;
+        
+        console.log('Finished an image');
+
+        this.generatingImage = false;
+
+        this.nextImage();
     };
 
     Structure.prototype.generateCssIds = function () {
@@ -1871,14 +1922,16 @@
 
             structure.refreshParentBoundries();
 
-            structure.saveToJSON();
+            structure.saveStructureToJSON();
 
-            structure.refreshCode();
+            structure.outputCode(structure.generateCode());
 
-            structure.output();
+            process.exit(0);
         });
 
-        structure.generateImages();
+        structure.queueImagesForGeneration();
+
+        structure.startImageGeneration();
     }
 
     // Verificarea de float este simpla:
