@@ -24,14 +24,13 @@
     // than pixels, all values must be converted before using. 
     // Defaults: types (points) rulers (in?)
     // 
+    // TODO: Retrieve the GenX PSD Test File as an image for left to right comparison.
+
     //
-
-
-    /**
-     * Has method
-     * Will provide a response for a chain of Object properties
-     * e.g: x.has('one.of.these.properties');
-     */
+    // Has method
+    // Will provide a response for a chain of Object properties
+    // e.g: x.has('one.of.these.properties');
+    //
     Object.defineProperty(Object.prototype, '_has', {
         enumerable : false,
         value : function(params) {
@@ -53,10 +52,10 @@
         }
     });
 
-    /**
-     * getValueOf
-     * Retrieves the value of a chained Object properties
-     */
+    //
+    // getValueOf
+    // Retrieves the value of a chained Object properties
+    //
     Object.defineProperty(Object.prototype, '_get', {
         enumerable : false,
         value : function(params, fallback) {
@@ -81,9 +80,8 @@
         }
     });
 
-    // TODO: Create a test suite generator to get the GenX File and generate also images
-    // Which will be shown on the same page as a left and right comparison.
 
+    // Init
     function init(generator) {
         
         generator.getDocumentInfo().then(
@@ -380,7 +378,7 @@
     // in the structure tree, allocate different cssNames to avoid id collision
 
 
-    function parseCSS(style, globalStyles, cssOverwrites) {
+    function parseCSS(style, globalStyles) {
 
         // TODO: Add default styles for all the bellow properties.
 
@@ -493,10 +491,6 @@
                 }
             },
             textColor;
-
-        Object.keys(cssOverwrites).forEach(function (property) {
-            css[property] = cssOverwrites[property];
-        });
 
         // -----------------
         // Background styles
@@ -808,15 +802,16 @@
         return text;
     }
 
-    var getUnique = (function () {
-        var id = 0;
-        return function () {
-            id += 1;
-            return id;
-        };
-    }());
-
-    function Layer(structure, layer, cssOverwrites, clippingMask) {
+    /**
+     * Creates an instance of Layer.
+     *
+     * @constructor
+     * @this {Layer}
+     * @param {Structure} structure The Structure instance that stores this layer
+     * @param {JSON} layer The exported JSON data from PSD that comprises a layer
+     * @return { } [description]
+     */
+    function Layer(structure, layer, clippingMask) {
         var _this = this,
             parsedCSS;
 
@@ -832,7 +827,7 @@
         // Raw css styles. 
         // This are similar to a "computed" style. Will include
         // all element styles which then can be further optimised.
-        this.css = parseCSS(layer, structure.styles, cssOverwrites);
+        this.css = parseCSS(layer, structure.styles);
 
         // Layer type specific configuration
         switch (layer.type) {
@@ -1338,8 +1333,7 @@
             enteredClippingMask = false;
 
         layers.forEach(function (layer, index) {
-            var cssOverwrites = {},
-                clippingMask = false;
+            var clippingMask = false;
 
             // Ignore masks for now!
             // TODO: Do not ignore masks.
@@ -1369,7 +1363,7 @@
                 enteredClippingMask = false;
             }
 
-            storage.push(new Layer(_this, layer, cssOverwrites, clippingMask));
+            storage.push(new Layer(_this, layer, clippingMask));
         });
     };
 
