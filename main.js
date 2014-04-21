@@ -608,9 +608,14 @@
             
             // 7. However, if leading is set to "auto", the actual leading number is 120% of the font size.
 
-            // css.lineHeight = (css.fontSize + style._get('text.textStyleRange[0].textStyle.leading', 30) / 2) - 1;
-            css.lineHeight = (css.fontSize + css.fontSize / 2) - 1;
+            (function () { 
+                var leading = style._get('text.textStyleRange[0].textStyle.leading', css.fontSize);
+                css.lineHeight = css.fontSize + leading / 2;
+                // css.lineHeight = (css.fontSize + css.fontSize / 2) - 1;
 
+                css.top -= leading / 4;
+
+            }());
             /*
             (function () { 
                 var baseLineShift = Math.abs(style._get('text.textStyleRange[0].textStyle.baselineShift', 1));
@@ -686,9 +691,6 @@
                     // element.
                     css.textAlign = 'left';
 
-                    // TODO: This is a sub optimal solution to compensate for the difference between
-                    // line height and leading.
-                    css.top -= 7;
                 } else {
                     // The text has a defined area and needs to be further
                     // wrapped in a parent container element.
@@ -767,7 +769,7 @@
                 var extractedText = text.substr(range.from, range.to - range.from),
                     styles = "",
                     fontFamily = range.textStyle.fontName.toLowerCase(),
-                    fontVariant = range.textStyle.fontStyleName.replace(' ', '_').toLowerCase();
+                    fontVariant = range.textStyle.fontStyleName.replace(/\s/g, '_').toLowerCase();
 
                 // For some reason Photoshop sometimes returns a duplicated
                 // text range.
@@ -958,7 +960,7 @@
         var _this = this,
             property = convertFromCamelCase(name) + ': ',
             value = this.css[name],
-            after = '';
+            before = '';
 
         switch (name) {
             case 'top':
@@ -1091,7 +1093,7 @@
                 if (0 < value.length) {
                     value.forEach(function (bound) {
                         property += Math.ceil(bound) + 'px ';
-                        after += Math.ceil(bound) + 'px ';
+                        before += Math.ceil(bound) + 'px ';
                     });
                 }
 
@@ -1158,7 +1160,7 @@
 
                         ['outerGlow', 'innerGlow'].forEach(function (glowType) {
                             if (true === value[glowType].active) {
-                                after += createBoxShadow(value, glowType, _this.type);
+                                before += createBoxShadow(value, glowType, _this.type);
                             }
                         });
 
@@ -1187,7 +1189,7 @@
                 property += value.family.toLowerCase();
 
                 if ('Regular' !== value.variant) {
-                    property += value.variant.replace(' ', '_').toLowerCase()
+                    property += value.variant.replace(/\s/g, '_').toLowerCase()
                 }
                
             break;
@@ -1199,7 +1201,7 @@
 
         return {
             property: property,
-            after: after
+            before: before
         };
     };
 
@@ -1217,18 +1219,18 @@
 
         Object.keys(this.css).forEach(function (property) {
             var parsedCSS = _this.getCSSProperty(property);
-            // TODO: Add outer glow as an after element.
+            // TODO: Add outer glow as an before element.
 
 
             // TODO: Add _this.css[property].active testing before trying to create a method.
 
             css += '\t' + parsedCSS.property + ';\n';
 
-            if ('' !== parsedCSS.after) {
+            if ('' !== parsedCSS.before) {
                 if ('boxShadow' === property && 'textLayer' === _this.type) {
-                    before += '\ttext-shadow: ' + parsedCSS.after + ';\n';
+                    before += '\ttext-shadow: ' + parsedCSS.before + ';\n';
                 } else {
-                    before += '\t' + convertFromCamelCase(property) + ': ' + parsedCSS.after + ';\n';
+                    before += '\t' + convertFromCamelCase(property) + ': ' + parsedCSS.before + ';\n';
                 }
             }
             
@@ -1260,7 +1262,7 @@
             if ('' !== this.text) {
                 css += '\tcontent: "' 
                     + this.text
-                        .replace('\r', ' \\A ')
+                        .replace(/\r/g, ' \\A ')
                         .replace(/[\s]+/g, ' ')
                     + '";\n';
             } else {
@@ -1296,7 +1298,7 @@
         }
 
         content += this.text
-            .replace("\r", "<br />");
+            .replace(/\r/g, "<br />");
 
         this.siblings.forEach(function (sibling) {
             content += sibling.getHTML();
@@ -1482,7 +1484,7 @@
                     // TODO: Add a layer hashsum at the end of the layer to ensure that
                     // if the layer has changed then the image should be regenerated as well.
                     
-                    layer.fileName = _this.psdName.replace('.', '_') + '_' + layer.parent.cssId + '_' + layer.cssId + '.png';
+                    layer.fileName = _this.psdName.replace(/\./g, '_') + '_' + layer.parent.cssId + '_' + layer.cssId + '.png';
                     layer.filePath = _this.folders.images + layer.fileName;
 
                     if (true === fs.existsSync(layer.filePath)) {
@@ -1567,12 +1569,12 @@
 
                 layer.cssId = layer.parent.cssId + '-'
                     + layer.name
-                        .replace(/&/, '')
-                        .replace(/^\//, 'a')
+                        .replace(/&/g, '')
+                        .replace(/^\//g, 'a')
                         .replace(/^[0-9]/g, 'a')
                         .replace(/\s/g, '-')
-                        .replace(',', '-')
-                        .replace('/', '');
+                        .replace(/,/g, '-')
+                        .replace(/\//g, '');
 
                 if (-1 === _this.cssIds.indexOf(layer.cssId)) {
                     // The ID is unique and can be used.
