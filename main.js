@@ -940,6 +940,11 @@
             break;
 
             case 'width':
+                
+                if (0 < value && 1 > value) {
+                    value = 1;
+                }
+
                 property += value;
                 
                 if ('auto' !== value) {
@@ -949,6 +954,11 @@
             break;
 
             case 'height':
+
+                if (0 < value && 1 > value) {
+                    value = 1;
+                }
+
                 property += value;
                 
                 if ('auto' !== value) {
