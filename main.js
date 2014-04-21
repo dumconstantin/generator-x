@@ -610,11 +610,41 @@
 
             (function () { 
                 var leading = style._get('text.textStyleRange[0].textStyle.leading', css.fontSize);
-                css.lineHeight = css.fontSize + leading / 2;
-                // css.lineHeight = (css.fontSize + css.fontSize / 2) - 1;
 
-                css.top -= leading / 4;
+                if (leading < css.fontSize) {
+                    leading = css.fontSize;
+                }
+
+                css.lineHeight = leading; 
+
+                if (css.lineHeight > css.fontSize) {
+                    css.top -= leading / 4;
+                }
+
+                // This will always be an approximation due to the different way Photoshop
+                // and Web Browsers understand text. In short, there is a value called
+                // sTypoAscender that gives the space above the basline text to accomodate
+                // for the tallest character. Browsers add this value as inherent to line-height
+                // while Photoshop dissregards this value. This means that if a text begins at
+                // top: 50px in Photoshop it will actually begin at top: 53px in a Browser, the
+                // 3px being the sTypeAscender the browser reserves for the laster glyph in that
+                // font family. 
+                // Although if you select a text in Photoshop, it will select it with the
+                // sTypeAscender, just the bounding box does not accomodate it.
+                // 
+                // @TODO: find a way to read the sTypoAscender value from the font (or the OS if
+                // it requires the text rendering engine) and add it as a negative top margin.
+
+                // Estimated sTypeAscender calculation based on experimentation with different
+                // font sizes.
+                if (48 > css.fontSize) {
+                    css.top -= (48 - css.fontSize) * 0.166;
+                } else {
+                    css.top -= (72 - css.fontSize) * 0.291;
+                }
+
             }());
+
             /*
             (function () { 
                 var baseLineShift = Math.abs(style._get('text.textStyleRange[0].textStyle.baselineShift', 1));
@@ -764,6 +794,11 @@
             // If there is just one text range that means the text
             // is uniform.
         } else {
+
+            // @TODO: First select distinct textRanges and then begin to parse them.
+            // This is due to the fact that some textRanges are comprised from
+            // more redundant elements.
+
             textRanges.forEach(function (range) {
                 var extractedText = text.substr(range.from, range.to - range.from),
                     styles = "",
