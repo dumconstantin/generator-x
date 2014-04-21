@@ -1,36 +1,43 @@
-// ----------------------------------
-// GeneratorX
-// @author Constantin Dumitrescu
-// @author Bogdan Matei
-// @company Brandup
-// @version 0.1.0  
-// ----------------------------------
-
+/** ----------------------------------
+ * GeneratorX
+ * @author Constantin Dumitrescu
+ * @author Bogdan Matei
+ * @company Brandup
+ * @version 0.1.0
+ * -----------------------------------
+ * 
+ * The GeneratorX has 8 stages:
+ *  1. Parse the PSD exported document 
+ *  2. Generate images for bitmap PSD layers
+ *  3. From the absolute styles, connections between elements will emerge (e.g. floats, overlay, etc)
+ *  4. Establish the logical order of dom elements (based on float, etc)
+ *  5. Find patterns in styles through css duplication, hierachy and inheritance to optimise the css creation
+ *  7. Export the generated HTML and CSS into files
+ *
+ *
+ * @TODO: If the designer has his Types and Rulers in anything else 
+ *     than pixels, all values must be converted before using. 
+ *     Defaults: types (points) rulers (in?)
+ *     
+ * @TODO: Retrieve the GenX PSD Test File as an image for left to right comparison.
+ *
+ * 
+ */
 
 (function () {
     "use strict";
 
     var 
-
         fs = require('fs'),
         path = require('path'),
         PNG = require('pngjs').PNG,
         events = new require('events'),
         sizeOf = require('image-size');
 
-    // GLOBAL TODOs
-    // 
-    // @TODO: If the designer has his Types and Rulers in anything else 
-    // than pixels, all values must be converted before using. 
-    // Defaults: types (points) rulers (in?)
-    // 
-    // @TODO: Retrieve the GenX PSD Test File as an image for left to right comparison.
-
     //
     // Has method
     // Will provide a response for a chain of Object properties
     // e.g: x.has('one.of.these.properties');
-    //
     Object.defineProperty(Object.prototype, '_has', {
         enumerable : false,
         value : function(params) {
@@ -80,23 +87,6 @@
         }
     });
 
-
-    // Init
-    function init(generator) {
-        
-        generator.getDocumentInfo().then(
-
-            function (document) {
-                runGenerator(document, generator);
-            },
-            
-            function (err) {
-                console.error(" Error in getDocumentInfo:", err);
-            }
-
-        ).done();    
-    }
-
     function stringify(obj, circularProperties) {
         var stringified,
             circularProperties = circularProperties ? circularProperties : [];
@@ -122,6 +112,16 @@
         }
 
         return stringified;
+    }
+
+    /**
+     * Convert camelCase strings to hyphen separated words.
+     *
+     * @param  {string} name The camelCase words.
+     * @return {string}      The hyphen separated words
+     */
+    function convertFromCamelCase(camelCaseWords) {
+        return camelCaseWords.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
     }
 
     function generateFontFace(font, fontName) {
@@ -226,16 +226,6 @@
         return font;
     }
 
-    /**
-     * Convert camelCase strings to hyphen separated words.
-     *
-     * @param  {string} name The camelCase words.
-     * @return {string}      The hyphen separated words
-     */
-    function convertFromCamelCase(camelCaseWords) {
-        return camelCaseWords.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-    }
-
     function createBoxShadow(shadowStyles, shadowType, elementType) {
         var property = "",
             shadow = shadowStyles[shadowType],
@@ -248,7 +238,7 @@
 
         if (-1 === ['outerGlow', 'innerGlow'].indexOf(shadowType)) {
             
-            // TODO: Accomodate for the chokeMatte property
+            // @TODO: Accomodate for the chokeMatte property
             percent = normalisedAngle / 90;
             if (angle <= 90) {
                 x = - (shadow.distance - shadow.distance * percent);
@@ -277,12 +267,12 @@
             property += ', ';
         }
 
-        // TODO: For outer glows, create the use case for gradient usage instead
+        // @TODO: For outer glows, create the use case for gradient usage instead
         // of solid color.
 
         property += Math.round(x) + 'px ' + Math.round(y) + 'px ';
     
-        // TOOD: Establish the relation between innerGlow parameters (chokeMatte and size) and
+        // @TOOD: Establish the relation between innerGlow parameters (chokeMatte and size) and
         // omolog values in CSS.
         // It seems that a Choke: 90%, Size: 10px is the same as box-shadow: 0 0 0 10px
         
@@ -320,30 +310,6 @@
         return property;
     }
 
-    // All sections are still layers.
-    // The semantic is given by the way the interaction with the dom will occur
-    // A layer must have: 
-    // - tag: div, p, span, etc
-    // - class
-    // - id
-    // - text
-    // - parent/nextSibling/prevSibling for traversing
-    // - css all the css properties that will eventually end in the stylesheet
-
-    // Parsing will be made in 7 stages:
-    // 1. The parsing of the PSD document with absolute styles - Done
-    // 2. From the absolute styles connections between elements will emerge (e.g. floats, overlay, etc)
-    // 3. Establish the logical order of dom elements (based on float, etc)
-    // 4. Find patterns in styles through css duplication, hierachy and inheritance to optimise the css creation
-    // 5. Create the HTML version of the structure
-    // 6. Create the CSS version of the layers
-    // 7. Create a file with the HTML and CSS code
-
-
-    // TODO: For layers that have the same name regardless of their position
-    // in the structure tree, allocate different cssNames to avoid id collision
-
-
     /**
      * Creates an instance of Layer.
      * 
@@ -360,7 +326,7 @@
      *                                    layers before it and needs to be exported 
      *                                    as an image.
      *                                                                   
-     * @return {Layer} The created layer instance.
+     * @return {Layer} The Layer instance for chaining.
      */
     function Layer(structure, layer, clippingMask) {
         var _this = this,
@@ -483,8 +449,7 @@
         }
 
         return this;
-    }
-
+    };
 
     /**
      * Creates the output ready text from the exported PSD text including
@@ -559,11 +524,13 @@
         return this;
     };
 
-
-    Layer.prototype.parseCSS = function (style, globalStyles) {
-
-        // TODO: Add default styles for all the bellow properties.
-
+    /**
+     * Parse the raw data from Photoshop that describe the Layer
+     * and formulate the CSS styles.
+     * 
+     * @return {Layer} The Layer instance for chaining.
+     */
+    Layer.prototype.parseCSS = function () {
         var style = this.layer,
             globalStyles = this.structure.globalStyles,
             css = {
@@ -633,7 +600,6 @@
                         opacity: style._get('layerEffects.innerShadow.opacity.value', 75),
                         distance: style._get('layerEffects.innerShadow.distance', 5),
                         blur: style._get('layerEffects.innerShadow.blur', 5),
-                        // TODO: Add global lighting angle
                         angle: style._get('layerEffects.innerShadow.localLightingAngle.value', 120),
                         spread: style._get('layerEffects.innerShadow.chokeMatte', 0) 
                     },
@@ -697,23 +663,23 @@
             css.boxShadow.outer.angle = globalStyles.globalLight.angle;
         }
 
-        // TODO: It seems that for shadows the 100% opacity is not 100% CSS opacity
+        // @TODO: It seems that for shadows the 100% opacity is not 100% CSS opacity
         // but somewhere around 80%. Experiment with this and try to find a 
         // good approximation.
         
-        // TODO: Account for different blend modes for each style. This would be an 
+        // @TODO: Account for different blend modes for each style. This would be an 
         // advanced feature and would require a canvas to plot individual features
         // and an implementation of blend mode algorithms to obtain accurate CSS
         // values.
 
-        // TODO: Depending on the degree of accuracy the user requires, the layer can be
+        // @TODO: Depending on the degree of accuracy the user requires, the layer can be
         // exported as an image to ensure that all FX styles are 100% accurate.
 
-        // TODO: Implement Radial Gradient
+        // @TODO: Implement Radial Gradient
         
-        // TODO: Implement Angle Gradient
+        // @TODO: Implement Angle Gradient
 
-        // TODO: Implement Drop shadow countour settings on layersEffects.dropShadow.transferSpec
+        // @TODO: Implement Drop shadow countour settings on layersEffects.dropShadow.transferSpec
 
         // Gradient Colors
         style._get('layerEffects.gradientFill.gradient.colors', []).forEach(function (color) {
@@ -728,10 +694,8 @@
             css.background.gradient.locations.push(color.location);
         });
 
-        // The color array is in reverse order due to the way is added
+        // The color array is in reverse order due to the way it is parsed added.
         css.background.gradient.colors.reverse();
-
-        // TODO: Implement border
 
         // Border Radius
         switch (style._get('path.pathComponents[0].origin.type', '')) {
@@ -756,7 +720,7 @@
         }
 
         if (true === style._has('strokeStyle', false)) {
-            // TODO: Implement strokeStyles for shape layers.
+            // @TODO: Implement strokeStyles for shape layers.
             // This can either be a new ::before / ::after element with
             // a transparent background and a border.
             // OR in some cases it might be an SVG.
@@ -766,23 +730,11 @@
             css.background.active = false;
         }
 
-
-        // [TEMP] Default dimensions.
         css.width = css.right - css.left;
         css.height = css.bottom - css.top;
 
 
         if ('textLayer' === style.type) {
-
-
-            // TODO: Revisit lineHeight / leading styles. There might be
-            // a better way to parse lineHeight.
-
-            // 30 seems to be the default leading/line height. 
-            // In CSS the line height is set on the line on which the text sits
-            // while leading seems to be the distance between lines.
-            
-            // 7. However, if leading is set to "auto", the actual leading number is 120% of the font size.
 
             (function () { 
                 var leading = style._get('text.textStyleRange[0].textStyle.leading', css.fontSize);
@@ -821,19 +773,6 @@
 
             }());
 
-            /*
-            (function () { 
-                var baseLineShift = Math.abs(style._get('text.textStyleRange[0].textStyle.baselineShift', 1));
-                
-                // 1px baseLineShift = 2.40566
-
-                if (2.40566 > baseLineShift) {
-                    css.fontSize = Math.floor(css.fontSize / 2);
-                    css.lineHeight = Math.floor(css.lineHeight / 2);
-                }
-            }());
-            */
-
             (function () {
                 var textStyleRanges = style._get('text.textStyleRange', []);
 
@@ -847,8 +786,8 @@
 
             }());
 
-            // TODO: Implement the WebKit algorithm to detect the real width of the 
-            // text with all the styles attached. 
+            // @TODO: Implement the WebKit algorithm to detect the real width of the 
+            // text with all the layer styles. 
             // This should do the following:
             // 1. Parse the .ttf file
             // 2. Create the sequence of text vectors dictated by the .ttf rules
@@ -857,23 +796,24 @@
             // 4. Extract the width pixel value from the vector implementation in 
             // bitmap environment.
 
-            // TODO: Adjust the estimated px value bellow that seems to accomodate
+            // @TODO: Adjust the estimated px value bellow that seems to accomodate
             // the difference between PSD and Browser text rendering.
             css.width = css.width + 10;
             css.height = 'auto';
 
-            // Definitions:
-            // boundingBox: the coordinates that wrap the text
-            // bounds: the coordinates that wrap the user defined area for the text or 
-            //      if the area wasn't defined by the user, the total area occupied 
-            //      by the text which might be different than the boundingBox coordinates
-            
-            // It seems that the bounding box for text content is given by the
-            // layer.text.textShape.char = "box" | "paint"
-            // and
-            // layer.text.textShape.bounds = { top | left | bottom | right }
-
             (function () {
+
+                // Definitions:
+                // boundingBox: the coordinates that wrap the text
+                // bounds: the coordinates that wrap the user defined area for the text or 
+                //      if the area wasn't defined by the user, the total area occupied 
+                //      by the text which might be different than the boundingBox coordinates
+                
+                // It seems that the bounding box for text content is given by the
+                // layer.text.textShape.char = "box" | "paint"
+                // and
+                // layer.text.textShape.bounds = { top | left | bottom | right }
+
                 var bounds = style._get('text.bounds'),
                     boxBounds = style._get('text.boundingBox'),
                     boundsWidth = bounds.right - bounds.left,
@@ -884,22 +824,20 @@
                 // From inital experimentation the difference between the bounds
                 // when not having a user defined area is within a 10 px range.
                 // Of course, this is empiric evidence and needs further research.
-                // Also, an area that is less than 10 px from the area occupied
-                // by the text leaves little room for alignment (which is in fact
-                // the goal of this). If the desiner did create a less than 10 px
+                // Also, an area that is less than 10 px from the text occupied
+                // area, leaves little room for alignment (which is in fact
+                // the goal of this function). If the desiner did create a less than 10 px
                 // container for the text then this might be a bad practice to do
                 // so.
 
                 if (6 > Math.abs(boxWidthDifference)) {
-                    // The text does not have a defined area and an be left 
-                    // to be arranged through the alignment styles of the parent
-                    // element.
+                    // The text does not have a defined area and can be align to the left (default)
                     css.textAlign = 'left';
 
                 } else {
+
                     // The text has a defined area and needs to be further
                     // wrapped in a parent container element.
-
                     css.width = boundsWidth;
                     css.height = boundsHeight;
                     css.left -= Math.ceil(boxBounds.left);
@@ -908,60 +846,48 @@
             }());
         }
 
-        // [TEMP] Overwrite positioning for now
         css.position = 'absolute';
 
-        // TODO: Implement outer glow
-
-        // TODO: Implement inner shadow/inner glow
-
-        // ---------
-        // Text styles
-
-
-        // For some reason font size comes in a different format that is 
-
-        // TODO: Line height
-        // leading / font size
-        // css.lineHeight = ((style._get('text.textStyleRange[0].textStyle.leading', 16) / css.fontSize) * 1000 ) / 1000;
-
-        //
-        // Overwrites
-        //
-
-        // Border requires adjustments to top, left and widht, height
+        // Borders require adjustments to top, left, width and height depending on the
+        // selected boxSizing.
         if (true === css.border.active) {
-            // TODO: Figure out how to keep the box-sizing: border-box. Currently
-            // inside photoshop you set the content
+            
             css.backgroundClip = 'content-box';
+
             if ('insetFrame' === css.boxSizing) {
+                
                 css.borderRadius.forEach(function (bound, index) {
                     css.borderRadius[index] = bound + css.border.size;
                 });
+
             } else if ('outsetFrame' === css.boxSizing) {
+
                 css.top -= css.border.size;
                 css.left -= css.border.size;
                 css.borderRadius.forEach(function (bound, index) {
                     css.borderRadius[index] = bound + css.border.size;
                 });
+
             } else if ('centeredFrame' === css.boxSizing) {
+
                 css.top -= css.border.size / 2;
                 css.left -= css.border.size / 2;
                 css.width -= css.border.size;
                 css.height -= css.border.size;
+                
                 css.borderRadius.forEach(function (bound, index) {
                     css.borderRadius[index] = bound + css.border.size;
                 });
+
             } else {
                 console.log('The box sizing "' + css.boxSizing + '" is not recognised.');
             }
         }
 
         this.css = css;
+
         return this;
-    }
-
-
+    };
 
     /**
      * Create a CSS property that will be added to the style list
@@ -2124,6 +2050,21 @@
         };
     }*/
 
-    exports.init = init;
+
+    // Init
+    exports.init = function (generator) {
+        
+        generator.getDocumentInfo().then(
+
+            function (document) {
+                runGenerator(document, generator);
+            },
+            
+            function (err) {
+                console.error(" Error in getDocumentInfo:", err);
+            }
+
+        ).done();    
+    };
 
 }());
