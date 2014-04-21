@@ -1526,35 +1526,33 @@
      * 
      * @return {object} An object that stores the generated HTML and CSS.
      */
-    Structure.prototype.generateCode = function () {
-        var html = '',
-            css = '';
+    Structure.prototype.refreshCode = function () {
+        var _this = this;
+
+        this.html = '';
+        this.css = '';
 
         this.layers.forEach(function (layer) {
-            html += layer.getHTML();
-            css += layer.getCSS();
+            _this.html += layer.getHTML();
+            _this.css += layer.getCSS();
         });
 
-        html = this.header + html + this.footer;
+        this.html = this.header + this.html + this.footer;
 
-        return {
-            html: html,
-            css: css
-        };
+        return this;
     };
 
     /**
      * Write the HTML and CSS code to files.
+     * Needs Structure.refreshCode called before to output the
+     * PSD HTML and CSS version.
      *
-     * @param  {object} code Has the following properties
-     *                       .html : The fully generated HTMLcode
-     *                       .css  : The fully generated CSS code
      * @return {Structure}  The Structure instance for chaining.
      */
-    Structure.prototype.outputCode = function (code) {
+    Structure.prototype.outputCode = function () {
         
-        fs.writeFileSync(this.files.html, code.html);
-        fs.writeFileSync(this.files.css, code.css);
+        fs.writeFileSync(this.files.html, this.html);
+        fs.writeFileSync(this.files.css, this.css);
 
         console.log('Index.html and style.css were created.');
 
@@ -1983,7 +1981,8 @@
                 .refreshImageBoundries()
                 .refreshParentBoundries()
                 .saveStructureToJSON()
-                .outputCode(structure.generateCode());
+                .refreshCode()
+                .outputCode();
 
             // All work is done and can safely exit.
             process.exit(0);
