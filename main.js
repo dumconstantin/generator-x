@@ -1336,7 +1336,7 @@
      *                        - Generator reference
      *                        - folder paths (images, fonts, etc)
      *                        - file paths for generated content
-     * @return {Structure} The structure instance.
+     * @return {Structure}  The Structure instance for chaining.
      */
     function Structure(config) {
         var _this = this;
@@ -1397,7 +1397,7 @@
      *                         Global parent. This method will be called from within a layer 
      *                         if that layer has siblings.
      * @param  {array} layers  The sibling Layers that need to be created. 
-     * @return {undefined}
+     * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.createLayers = function (storage, layers) {
         var _this = this,
@@ -1441,11 +1441,58 @@
     };
 
     /**
+     * Generate CSS IDs for each layer. 
+     * This is done post Layer creation due to the fact that currently,
+     * to be able to create an unique ID, we use the full parent stack which
+     * we get after all Layers have been created and then Linked.
+     *
+     * Example CSS ID: parent1CSSID-parent2CSSID-parent3CSSID-layer.name
+     * 
+     * @return {Structure}  The Structure instance for chaining.
+     */
+    Structure.prototype.generateCssIds = function () {
+        var _this = this;
+
+        // Recursive function.
+        function generateCssIds(layers) {
+
+            layers.forEach(function (layer, index) {
+
+                layer.cssId = layer.parent.cssId + '-'
+                    + layer.name
+                        .replace(/&/g, '')
+                        .replace(/^\//g, 'a')
+                        .replace(/^[0-9]/g, 'a')
+                        .replace(/\s/g, '-')
+                        .replace(/,/g, '-')
+                        .replace(/\//g, '');
+
+                if (-1 === _this.cssIds.indexOf(layer.cssId)) {
+                    // The ID is unique and can be used.
+                } else {
+                    // The index is unique per PSD file an such provides a
+                    // simple way to ensure the layer is unique.
+                    layer.cssId += index;
+                }
+
+                // Keep cssIds to ensure that the next generated id is unique.
+                _this.cssIds.push(layer.cssId);
+
+                generateCssIds(layer.siblings);
+            });
+        }
+
+        generateCssIds(this.layers);
+
+        return this;
+    };
+
+    /**
      * Create linkages between layers to be able to reach a parent
      * from within a layer or navigate through next/prev layers that sit
      * on the same level.
      * 
-     * @return {undefined}
+     * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.linkLayers = function () {
 
@@ -1469,13 +1516,15 @@
         }
 
         linkLayers(this.layers, this.parent);
+
+        return this;
     };
 
     /**
      * Generate the output ready full HTML and CSS code by 
      * requesting it from each Layer.
      * 
-     * @return {undefined}
+     * @return {object} An object that stores the generated HTML and CSS.
      */
     Structure.prototype.generateCode = function () {
         var html = '',
@@ -1500,7 +1549,7 @@
      * @param  {object} code Has the following properties
      *                       .html : The fully generated HTMLcode
      *                       .css  : The fully generated CSS code
-     * @return {undefined}
+     * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.outputCode = function (code) {
         
@@ -1508,13 +1557,15 @@
         fs.writeFileSync(this.files.css, code.css);
 
         console.log('Index.html and style.css were created.');
+
+        return this;
     };
 
     /**
      * Save the received document and the generated structure in JSON
      * files to support the debugging process.
      * 
-     * @return {undefined}
+     * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.saveStructureToJSON = function () {
 
@@ -1528,6 +1579,8 @@
 
         console.log('Saved raw document to "' + this.files.document + '"');
         console.log('Saved parsed structure to "' + this.files.structure + '"');
+
+        return this;
     };
 
     /**
@@ -1535,7 +1588,7 @@
      * The process begings by calling:
      * @see  startImageGeneration
      * 
-     * @return {undefined} [description]
+     * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.queueImagesForGeneration = function () {
         var _this = this;
@@ -1579,22 +1632,35 @@
         }
 
         queueImages(this.layers);
+
+        return this;
     };
 
     /**
      * Start generating images based on the image queue.
-     * @return {undefined}
+     * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.startImageGeneration = function () {
+        
         this.nextImage();
+
+        return this;
     };
 
+    /**
+     * Trigger the next image for generation.
+     * 
+     * @return {Structure}  The Structure instance for chaining.
+     */
     Structure.prototype.nextImage = function () {
         var _this = this,
             imageData;
 
         if (true === this.generatingImage) {
-            console.log('Image is currently generating. The image generation is recursive.');
+            console.log('Image is currently generating. The image generation is ' 
+                + ' recursive and the next image will beging generating once '
+                + ' the current one finishes.');
+
             return;
         }
 
@@ -1613,7 +1679,7 @@
             this.generator.getPixmap(this.document.id, this.currentGeneratedImage.id, {}).then(
                 function(pixmap){
 
-                    _this.savePixmap(pixmap);
+                    _this.saveImage(pixmap);
 
                 },
                 function(err){
@@ -1621,22 +1687,37 @@
                 }
             ).done();
         }
+
+        return this;
     };
 
-    // TODO: Spawn a worker to handle the saving of the pixmap.
-    Structure.prototype.savePixmap = function(pixmap) {
+    /**
+     * Save the image using the pixmap received from Photoshop.
+     * Will require a ARGB to RGBA bits conversion.
+     * 
+     * @param  {object} pixmap The bitmap representaton from Photoshop.
+     * @return {Structure}  The Structure instance for chaining.
+     */
+    Structure.prototype.saveImage = function(pixmap) {
         var _this = this,
-            filePath = _this.currentGeneratedImage.filePath,
-            pixels = pixmap.pixels,
-            len = pixels.length,
             pixel,
             location,
-            png,
-            stream,
-            channelNo = pixmap.channelCount;
+            pixels = pixmap.pixels,
+            png = new PNG({
+                width: pixmap.width,
+                height: pixmap.height
+            }),
+            stream = fs.createWriteStream(_this.currentGeneratedImage.filePath);
+
+        // @TODO: The pixamp contains the end image width/height. Currently,
+        // after generation, all images are parsed to read to real width and height.
+        // Ideally we should save these in a JSON for future references to avoid IO.
+
+        // @TODO: The ARGB to RGBA is processor intensive and blocking. This will require
+        // a worker to handle pixmap saving.
 
         // Convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
-        for(location = 0; location < len; location += channelNo){
+        for(location = 0; location < pixels.length; location += pixmap.channelCount) {
             pixel = pixels[location];
             pixels[location]   = pixels[location + 1];
             pixels[location + 1] = pixels[location + 2];
@@ -1644,75 +1725,82 @@
             pixels[location + 3] = pixel;
         }
 
-        png = new PNG({
-            width: pixmap.width,
-            height: pixmap.height
-        });
-     
         png.data = pixels;
 
         png.on('end', function () {
             stream.end();
 
-            _this.finishedImage({
-                width: pixmap.width,
-                height: pixmap.height
-            });
+            _this.finishedImage();
+
         });
 
-        console.log('Creating ' + filePath);
-        stream = fs.createWriteStream(filePath);
-        png
-            .pack()
-            .pipe(stream);
+        // Encode the pixmap to the PNG format and stream it to the file.
+        png.pack().pipe(stream);
+
+        return this;
     };
 
 
-    Structure.prototype.finishedImage = function (imageData) {
-        var layer = this.currentGeneratedImage.layer;
-        
-        console.log('Finished an image');
+    /**
+     * The currentGeneratedImage has finished generating. 
+     * 
+     * The following process happened:
+     * - A layer with layer.type = 'img' has been added to a queue
+     * - When the layer was triggered for generation, Photoshop was requested to
+     *     transfer its pixmap
+     * - The pixmap was converted to RGBA from ARGB
+     * - The converted pixmap was encoded into a PNG format
+     * - The encoded version was streamed into a file
+     * 
+     * @return {Structure}  The Structure instance for chaining.
+     */
+    Structure.prototype.finishedImage = function () {
+
+        console.log('Generated: ' + this.currentGeneratedImage.filePath);
 
         this.generatingImage = false;
 
         this.nextImage();
+
+        return this;
     };
 
-    Structure.prototype.generateCssIds = function () {
-        var _this = this;
 
-        function generateCssIds(layers) {
-
-            layers.forEach(function (layer, index) {
-
-                layer.cssId = layer.parent.cssId + '-'
-                    + layer.name
-                        .replace(/&/g, '')
-                        .replace(/^\//g, 'a')
-                        .replace(/^[0-9]/g, 'a')
-                        .replace(/\s/g, '-')
-                        .replace(/,/g, '-')
-                        .replace(/\//g, '');
-
-                if (-1 === _this.cssIds.indexOf(layer.cssId)) {
-                    // The ID is unique and can be used.
-                } else {
-                    layer.cssId += index;
-                }
-
-                _this.cssIds.push(layer.cssId);
-
-                if (0 < layer.siblings.length) {
-                    generateCssIds(layer.siblings);
-                }
-            });
-        }
-
-        generateCssIds(this.layers);
-    };
-
+    /**
+     * Adjust the top, left, bottom, right width, height values 
+     * for bitmap Layers after the Images have been generated. This will ensure 
+     * correlated values to the real image that takes into consideration 
+     * the FX boundries from the Photoshop image generation.
+     * 
+     * Important point: 
+     * FX layers do not necessary have an even spread of effects on both sides of the 
+     * initial image/shape. This means that the left side effect might have a smaller 
+     * width than the right side effect. When Photoshop gives the boundsWithFX it gives 
+     * an estimation of what those widths might be. When exporting the image we sometimes 
+     * get difference values than the boundsWithFX and also, we don't know were exactly
+     * in the generated image is the initial image/shape without the FX.
+     * This leads to a difficult problem of finding the exact FX widths of the exported
+     * image.
+     * 
+     * There are 3 options:
+     * 1) Augment the Photoshop file export through the Generator to give the real 
+     * widths of the FX once they have been transformed to bitmap and the image
+     * was cropped.
+     * 2) Create a image recognition system that will take the image/shape version
+     * without the FX and the image/shape version with FX and try to find the initial
+     * boundries within the FX version. 
+     * 3) Calculate a procentage of the estimated differences and apply it to the
+     * exported image width E.g. If boundsWithFX give a 200px width and 20px left FX
+     * then on an exported 190px width we can assume the left FX will be 
+     * 20 * 100 / 200 = 10%. We apply 10% on 190px and we get an estimated left FX
+     * of 18px. This will work most of the time but might have some misses from 
+     * time to time.
+     * 
+     * @return {Structure}  The Structure instance for chaining.
+     */
     Structure.prototype.refreshImageBoundries = function () {
 
+        // Recursive function.
         function refreshImageBoundries(layers) {
 
             layers.forEach(function (layer) {
@@ -1730,30 +1818,7 @@
                     if (undefined !== realImageSize) {
 
                         if (undefined !== layer.boundsWithFX) {
-                            // Important point: 
-                            // FX layers do not necessary have an even spread of effects on both sides of the
-                            // initial image/shape. This means that the left side effect might have a smaller
-                            // width than the right side effect. When Photoshop gives the boundsWithFX it gives
-                            // an estimation of what those widths might be. When exporting the image we sometimes
-                            // get difference values than the boundsWithFX and also, we don't know were exactly
-                            // in the generated image is the initial image/shape without the FX.
-                            // This leads to a difficult problem of finding the exact FX widths of the exported
-                            // image.
-                            // 
-                            // There are 3 options:
-                            // 1) Augment the Photoshop file export through the Generator to give the real 
-                            // widths of the FX once they have been transformed to bitmap and the image
-                            // was cropped.
-                            // 2) Create a image recognition system that will take the image/shape version
-                            // without the FX and the image/shape version with FX and try to find the initial
-                            // boundries within the FX version. 
-                            // 3) Calculate a procentage of the estimated differences and apply it to the
-                            // exported image width E.g. If boundsWithFX give a 200px width and 20px left FX
-                            // then on an exported 190px width we can assume the left FX will be 
-                            // 20 * 100 / 200 = 10%. We apply 10% on 190px and we get an estimated left FX
-                            // of 18px. This will work most of the time but might have some misses from 
-                            // time to time.
-                            // 
+
                             // The bellow is an implementation of option 3).
                             (function () {
                                 var topFXDifference = layer.css.top - layer.boundsWithFX.top,
@@ -1796,6 +1861,8 @@
                         layer.css.right = layer.css.left + layer.css.width;
                         layer.css.bottom = layer.css.top + layer.css.height;
                     }
+                } else {
+                    // The layer is not an image and does not require adjustments.
                 }
 
                 refreshImageBoundries(layer.siblings);
@@ -1804,97 +1871,97 @@
         }
 
         refreshImageBoundries(this.layers);
+
+        return this;
     };
 
+    /**
+     * After all (sibling) layers have real boundries, parent containers can 
+     * refresh their own boundries. 
+     * 
+     * The recalculation is done bottom up to ensure that changes from the lowest
+     * hierarchical container influence the top most container.
+     *
+     * Each container searches for the lowest top, left and the highest right, bottom
+     * among all sibling values. Once the extreme are found, these become the boundries
+     * for the container.
+     *
+     * The calculated boundries do not take into consideration FX as these will be 
+     * CSS styles that will not influence the positioning of elements.
+     * 
+     * @return {Structure}  The Structure instance for chaining.
+     */
     Structure.prototype.refreshParentBoundries = function () {
 
-        // Approach is done bottom-up to first get the lowest level
-        // grouped parsed and then adjusting the top level ones.
 
-        // The boundries are given by the topmost layer boundries (without FX)
-        // and bottomost layer boundries.
-        // Calculate the container boundries.
-        
-        function computeBoundries(section) {
+        // Recursive function.
+        function refreshParentBoundries(section) {
             var topMost, 
                 bottomMost,
                 leftMost,
                 rightMost;
 
-            section.siblings.forEach(function (sibling) {
+            section.siblings.forEach(function (sibling, index) {
 
                 if ('layerSection' === sibling.type && 0 !== sibling.siblings.length) {
-                    computeBoundries(sibling);
+                    refreshParentBoundries(sibling);
                 }
 
-                if (undefined === topMost) {
+                if (0 === index) {
+
                     topMost = sibling.css.top;
-                }
-
-                if (undefined === bottomMost) {
                     bottomMost = sibling.css.bottom;
-                }
-
-                if (undefined === leftMost) {
                     leftMost = sibling.css.left;
-                }
-
-                if (undefined === rightMost) {
                     rightMost = sibling.css.right;
-                }
 
-                if (topMost > sibling.css.top) {
-                    topMost = sibling.css.top
-                }
-                if (bottomMost < sibling.css.bottom) {
-                    bottomMost = sibling.css.bottom
-                }
-                if (leftMost > sibling.css.left) {
-                    leftMost = sibling.css.left;
-                }
-                if (rightMost < sibling.css.right) {
-                    rightMost = sibling.css.right;
-                }
+                } else {
 
+                    if (topMost > sibling.css.top) {
+                        topMost = sibling.css.top
+                    }
+
+                    if (leftMost > sibling.css.left) {
+                        leftMost = sibling.css.left;
+                    }
+
+                    if (bottomMost < sibling.css.bottom) {
+                        bottomMost = sibling.css.bottom
+                    }
+
+                    if (rightMost < sibling.css.right) {
+                        rightMost = sibling.css.right;
+                    }
+
+                }
             });
 
-            if (undefined === topMost) {
-                topMost = sibling.css.top;
-            }
+            section.css.top = undefined !== topMost ? topMost : section.css.top;
+            section.css.left = undefined !== leftMost ? leftMost : section.css.left;
+            section.css.bottom = undefined !== bottomMost ? bottomMost : section.css.bottom;
+            section.css.right = undefined !== rightMost ? rightMost : section.css.right;
 
-            if (undefined === bottomMost) {
-                bottomMost = sibling.css.bottom;
-            }
-
-            if (undefined === leftMost) {
-                leftMost = sibling.css.left;
-            }
-
-            if (undefined === rightMost) {
-                rightMost = sibling.css.right;
-            }
-
-            section.css.top = topMost;
-            section.css.left = leftMost;
-            section.css.bottom = bottomMost;
-            section.css.right = rightMost;
-            section.css.width = rightMost - leftMost;
-            section.css.height = bottomMost - topMost;
+            section.css.width = section.css.right - section.css.left;
+            section.css.height = section.css.bottom - section.css.top;
 
         }
 
-        // These are the top most layers AKA sections.
         this.layers.forEach(function (layer) {
 
             if ('layerSection' === layer.type && 0 !== layer.siblings.length) {
-                computeBoundries(layer);
+                refreshParentBoundries(layer);
             }
 
         });
+
+        return this;
     };
 
-
-
+    /**
+     * Call GeneratorX to parse the document and output the HTML and CSS files.
+     * @param  {JSON} document  The PSD exported data
+     * @param  {Generator} generator The reference to the Adobe Generator
+     * @return {undefined}
+     */
     function runGenerator(document, generator) {
         var structure = new Structure({
             folders: {
@@ -1908,30 +1975,26 @@
             },
             document: document,
             generator: generator
-        });        
-
-        structure.createLayers(structure.layers, structure.document.layers);
-
-        structure.linkLayers();
-
-        structure.generateCssIds();
+        });
 
         structure.events.on('imagesFinished', function () {
 
-            structure.refreshImageBoundries();
+            structure
+                .refreshImageBoundries()
+                .refreshParentBoundries()
+                .saveStructureToJSON()
+                .outputCode(structure.generateCode());
 
-            structure.refreshParentBoundries();
-
-            structure.saveStructureToJSON();
-
-            structure.outputCode(structure.generateCode());
-
+            // All work is done and can safely exit.
             process.exit(0);
-        });
+        });     
 
-        structure.queueImagesForGeneration();
-
-        structure.startImageGeneration();
+        structure
+            .createLayers(structure.layers, structure.document.layers)
+            .linkLayers()
+            .generateCssIds()
+            .queueImagesForGeneration()
+            .startImageGeneration();
     }
 
     // Verificarea de float este simpla:
