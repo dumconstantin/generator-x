@@ -614,7 +614,6 @@
                 // css.lineHeight = (css.fontSize + css.fontSize / 2) - 1;
 
                 css.top -= leading / 4;
-
             }());
             /*
             (function () { 
