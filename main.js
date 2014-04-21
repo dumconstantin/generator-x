@@ -20,11 +20,11 @@
 
     // GLOBAL TODOs
     // 
-    // TODO: If the designer has his Types and Rulers in anything else 
+    // @TODO: If the designer has his Types and Rulers in anything else 
     // than pixels, all values must be converted before using. 
     // Defaults: types (points) rulers (in?)
     // 
-    // TODO: Retrieve the GenX PSD Test File as an image for left to right comparison.
+    // @TODO: Retrieve the GenX PSD Test File as an image for left to right comparison.
 
     //
     // Has method
@@ -349,8 +349,6 @@
             property += shadow.blur + 'px ';
         }
 
-
-
         property += ' rgba(' + Math.round(shadow.color.red) + ', '
             + Math.round(shadow.color.green) + ', '
             + Math.round(shadow.color.blue) + ', '
@@ -374,7 +372,7 @@
     // - parent/nextSibling/prevSibling for traversing
     // - css all the css properties that will eventually end in the stylesheet
 
-    // Parsing will be made in 3 stages:
+    // Parsing will be made in 7 stages:
     // 1. The parsing of the PSD document with absolute styles - Done
     // 2. From the absolute styles connections between elements will emerge (e.g. floats, overlay, etc)
     // 3. Establish the logical order of dom elements (based on float, etc)
@@ -925,8 +923,8 @@
         
         if ('img' === this.tag) {
 
-            // Disactivate all FX from the element. These will be exported as a 
-            // bitmap from PSD anyway.
+            // Disactivate all FX from the element. 
+            // These will be exported as a bitmap from PSD anyway.
             this.css.boxShadow.active = false;
             this.css.background.active = false;
             this.css.border.active = false;
@@ -947,13 +945,21 @@
         return this;
     }
 
-    Layer.prototype.getCSSProperty = function (name) {
-        var property = convertFromCamelCase(name) + ': ',
-            after = "",
-            value = this.css[name],
-            _this = this;
 
-        // TODO: Add if statement for dealing with Master Active switch
+    /**
+     * Create a CSS property that will be added to the style list
+     * of a CSS selector
+     * 
+     * @param  {string} name The name of the CSS property of that belongs to
+     *                       the Layer instance.
+     * @return {string}      The fully generated CSS property.
+     */
+    Layer.prototype.getCSSProperty = function (name) {
+        var _this = this,
+            property = convertFromCamelCase(name) + ': ',
+            value = this.css[name],
+            after = '';
+
         switch (name) {
             case 'top':
                 property += Math.round(value) - Math.round(this.parent.css.top) + 'px';
