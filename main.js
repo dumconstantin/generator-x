@@ -400,6 +400,7 @@
                     masterActive: style._get('layerEffects.masterFXSwitch', true),
                     active: style._has('fill'),
                     color: {
+                        active: style._get('fill.color'),
                         red: style._get('fill.color.red', 255),
                         green: style._get('fill.color.green', 255),
                         blue: style._get('fill.color.blue', 255)
@@ -988,28 +989,32 @@
      * 
      * @param  {string} name The name of the CSS property of that belongs to
      *                       the Layer instance.
-     * @return {string}      The fully generated CSS property.
+     * @return {object}      The fully generated CSS property for the element and the
+     *                           necessary before pseudo-element supplimentary property.
      */
     Layer.prototype.getCSSProperty = function (name) {
         var _this = this,
             property = convertFromCamelCase(name) + ': ',
             value = this.css[name],
+            // The CSS property pseudo-element ::before 
             before = '';
 
         switch (name) {
             case 'top':
+                // Convert from absolute top to relative to parent top.
                 property += Math.round(value) - Math.round(this.parent.css.top) + 'px';
             break;
             
             case 'right':
-                property += 'auto'; // Math.round(value) + 'px';
+                property += 'auto';
             break;
             
             case 'bottom':
-                property += 'auto'; // Math.round(value) + 'px';
+                property += 'auto';
             break;
 
             case 'left':
+                // Convert from absolute left to relative to parent left.
                 property += Math.round(value) - Math.round(this.parent.css.left) + 'px';
             break;
 
@@ -1019,28 +1024,28 @@
 
             case 'width':
                 
-                if (0 < value && 1 > value) {
-                    value = 1;
-                }
-
-                property += value;
-                
                 if ('auto' !== value) {
-                    property += 'px';
+                    if (0 < value && 1 > value) {
+                        value = 1;
+                    }
+
+                    property += Math.round(value) + 'px';
+                } else {
+                    property += value;
                 }
 
             break;
 
             case 'height':
-
-                if (0 < value && 1 > value) {
-                    value = 1;
-                }
-
-                property += value;
                 
                 if ('auto' !== value) {
-                    property += 'px';
+                    if (0 < value && 1 > value) {
+                        value = 1;
+                    }
+
+                    property += Math.round(value) + 'px';
+                } else {
+                    property += value;
                 }
 
             break;
@@ -1049,47 +1054,41 @@
 
                 if (true === value.active && true === value.masterActive) {
 
-                    // In photohop there is the case where bitmap layers have background styles applied
-                    // but still keep a large portion transparent. This leads to images that cover everything 
-                    // behind them.
-                    if ('img' !== this.tag) {
-                        if (0 < value.gradient.colors.length) {
+                    if (0 < value.gradient.colors.length) {
 
-                            property += 'linear-gradient(';
+                        property += 'linear-gradient(';
 
-                            if (true === value.gradient.reverse) {
-                                value.gradient.colors.reverse();
-                            }
-
-                            property += Math.abs(value.gradient.angle + 90) + 'deg, ';
-
-                            value.gradient.colors.forEach(function (color, index, colors) {
-                                property += 'rgba(' 
-                                    + Math.round(color.red) + ','
-                                    + Math.round(color.green) + ',' 
-                                    + Math.round(color.blue) + ', '
-                                    + (value.gradient.opacity / 100).toFixed(2)
-                                    + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
-
-                                if (index < colors.length - 1) {
-                                    property += ', ';
-                                }
-                            });
-
-                            property += ')';
-
-                        } else if (null !== value.color.red) {
-                            property += 'rgb('
-                                + Math.round(value.color.red) + ', '
-                                + Math.round(value.color.green) + ', '
-                                + Math.round(value.color.blue)
-                                + ')';
-                        } else {
-                            property += 'transparent';
+                        if (true === value.gradient.reverse) {
+                            value.gradient.colors.reverse();
                         }
+
+                        property += Math.abs(value.gradient.angle + 90) + 'deg, ';
+
+                        value.gradient.colors.forEach(function (color, index, colors) {
+                            property += 'rgba(' 
+                                + Math.round(color.red) + ','
+                                + Math.round(color.green) + ',' 
+                                + Math.round(color.blue) + ', '
+                                + (value.gradient.opacity / 100).toFixed(2)
+                                + ') ' + Math.round((value.gradient.locations[index] * 100) / 4096) + '%';
+
+                            if (index < colors.length - 1) {
+                                property += ', ';
+                            }
+                        });
+
+                        property += ')';
+
+                    } else if (true == value.color.active) {
+                        property += 'rgb('
+                            + Math.round(value.color.red) + ', '
+                            + Math.round(value.color.green) + ', '
+                            + Math.round(value.color.blue)
+                            + ')';
                     } else {
                         property += 'transparent';
                     }
+
                 } else {
                     // The background is not active.
                 }
@@ -1110,6 +1109,7 @@
                 }
             break;
 
+            // BoxSizing is used for properly showing Stroke accoring to PSD settings.
             case 'boxSizing':
 
                 if ('outsetFrame' === value) {
@@ -1121,9 +1121,11 @@
                 } else {
                     console.log('Border sizing property ' + value + ' was not found.');
                 }
+
             break;
 
             case 'borderRadius':
+
                 if (0 < value.length) {
                     value.forEach(function (bound) {
                         property += Math.ceil(bound) + 'px ';
@@ -1131,7 +1133,7 @@
                     });
                 }
 
-                // Type: roundedRect, ellipse
+                // @TODO: Differentiate between shapeLayer types roundedRect, ellipse.
 
             break;
 
@@ -1188,6 +1190,7 @@
 
                 if (true === value.active) {
                         
+                        // Overwrite the property name to text-shadow.
                         if ('textLayer' === _this.type) {
                             property = 'text-shadow: ';
                         }
@@ -1223,7 +1226,7 @@
                 property += value.family.toLowerCase();
 
                 if ('Regular' !== value.variant) {
-                    property += value.variant.replace(/\s/g, '_').toLowerCase()
+                    property += value.variant.replace(/\s/g, '_').toLowerCase();
                 }
                
             break;
@@ -1239,6 +1242,11 @@
         };
     };
 
+    /**
+     * Generates the Layer CSS code.
+     * 
+     * @return {string} The full style with Layer Selector and style body.
+     */
     Layer.prototype.getCSS = function () {
         var _this = this,
             css = '',
@@ -1253,10 +1261,6 @@
 
         Object.keys(this.css).forEach(function (property) {
             var parsedCSS = _this.getCSSProperty(property);
-            // TODO: Add outer glow as an before element.
-
-
-            // TODO: Add _this.css[property].active testing before trying to create a method.
 
             css += '\t' + parsedCSS.property + ';\n';
 
@@ -1271,8 +1275,8 @@
             // Implementing certain styles require additional rules based
             // on the type of the element and the property being styled
             if ('textLayer' === _this.type && 'background' === property) {
-                // TODO: Fix gradient opacity on for text layers.
-                css += '\t' + '-webkit-background-clip: text;\n';
+                // @TODO: Fix gradient opacity on for text layers.
+                // css += '\t' + '-webkit-background-clip: text;\n';
                 // css += '\t' + '-webkit-text-fill-color: transparent;\n';
             }
 
@@ -1280,17 +1284,15 @@
                 addFont = _this.css[property].family;
             }
 
-            // console.log(getCSSFontFamily(_this[property]));
-
         });
 
         css += '}';
 
-        // TODO: If the font was already added do not add it again.
+        // @TODO: If the font was already added do not add it again.
 
         css += getCSSFontFamily(addFont);
 
-        if ("" !== before) {
+        if ('' !== before) {
             css += '\n#' + this.cssId + '::before {\n';
             
             if ('' !== this.text) {
@@ -1311,7 +1313,9 @@
             css += '\tleft: 0;\n';
             css += 'white-space: pre;';
             css += 'color: transparent;';
+
             css += before;
+            
             css += '}\n';
         }
 
@@ -1322,6 +1326,10 @@
         return css;
     };
 
+    /**
+     * Generates the Layer HTML code. 
+     * @return {string} The fully generated HTML code.
+     */
     Layer.prototype.getHTML = function () {
         var html = '',
             content = '',
@@ -1331,8 +1339,7 @@
             return '';
         }
 
-        content += this.text
-            .replace(/\r/g, "<br />");
+        content += this.text.replace(/\r/g, '<br />');
 
         this.siblings.forEach(function (sibling) {
             content += sibling.getHTML();
@@ -1340,7 +1347,7 @@
 
         switch (this.tag) {
             case 'img':
-                html += '\n<' + this.tag + ' id="' + this.cssId + '" src="' + this.structure.folders.images + this.fileName + '" />';
+                html += '\n<' + this.tag + ' id="' + this.cssId + '" src="' + (this.structure.folders.images + this.fileName) + '" />';
             break;
 
             case 'div':
@@ -1356,34 +1363,48 @@
         return html;
     };
 
-    // Config should contain:
-    // folder Obj
-    // files Obj
-    // document Obj - reference to the document
-    // generator Obj - reference to the generator
-
+    /**
+     * The Structure object will parse the PSD file and generate Layer objects.
+     * It is responsible for managing the following processes:
+     * - Parsing the PSD file and creating Layers
+     * - Linking Layers between them
+     * - Generate images for bitmap layers
+     * - Refreshing Layer boundries based on hierachy
+     * - Generating the CSS and HTML code.
+     * 
+     * @constructor
+     * @param {object} config Configuration object that holds:
+     *                        - PSD JSON document
+     *                        - Generator reference
+     *                        - folder paths (images, fonts, etc)
+     *                        - file paths for generated content
+     * @return {Structure} The structure instance.
+     */
     function Structure(config) {
         var _this = this;
-
 
         Object.keys(config).forEach(function (configKey) {
             _this[configKey] = config[configKey];
         })
 
         this.layers = [];
+        
         this.html = '';
         this.css = '';
+
         this.psdPath = this.document.file;
         this.psdName = this.psdPath.substr(this.psdPath.lastIndexOf('/') + 1, this.psdPath.length);
 
         // Store IDs to ensure there is no collision between styles.
         this.cssIds = [];
 
-        // Image generation 
+        // Image generation properties.
         this.imagesQueue = [];
         this.generatingImage = false;
         this.lastImageGenerated = {};
 
+        // In Photoshop layers adjust their behaviours by using global settings
+        // that can be overwritten by local settings.
         this.styles = {
             globalLight: {
                 angle: this.document._get('globalLight.angle', 118),
@@ -1391,8 +1412,7 @@
             }
         };
 
-        // This is the top most parent of the document. 
-        // Catch all traversal that arrive here.
+        // This is the top most parent of the document.
         this.parent = {
             css: parseCSS({}, this.styles, {}),
             cssId: 'global',
@@ -1409,8 +1429,19 @@
         // Set listeners.
         this.events = new events.EventEmitter();
         this.events.on('finishedImage', this.finishedImage.bind(this));
+
+        return this;
     }
 
+    /**
+     * Generate Layer objects based on the layers received from Photoshop
+     * @param  {array} storage An array of Layers that belongs to the parent layer.
+     *                         Initially. The first level of layers sit in the Structure 
+     *                         Global parent. This method will be called from within a layer 
+     *                         if that layer has siblings.
+     * @param  {array} layers  The sibling Layers that need to be created. 
+     * @return {undefined}
+     */
     Structure.prototype.createLayers = function (storage, layers) {
         var _this = this,
             enteredClippingMask = false;
@@ -1448,6 +1479,8 @@
 
             storage.push(new Layer(_this, layer, clippingMask));
         });
+
+        return this;
     };
 
     Structure.prototype.linkLayers = function () {
