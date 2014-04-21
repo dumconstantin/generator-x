@@ -1341,6 +1341,12 @@
                 }
             }
 
+            // Ignore invisible layers for not.
+            // TODO: Add a name detection for invisible layers as "hover", "tab", etc
+            if (false === layer.visible) {
+                return;
+            }
+
             if (true === layer.clipped) {
                 enteredClippingMask = true;
                 return;
@@ -1639,10 +1645,10 @@
         // Calculate the container boundries.
         
         function computeBoundries(section) {
-            var topmost = section.siblings[0].css.top,
-                rightmost = section.siblings[0].css.right,
-                leftmost = section.siblings[0].css.left,
-                bottomost = section.siblings[0].css.bottom;
+            var topMost, 
+                bottomMost,
+                leftMost,
+                rightMost;
 
             section.siblings.forEach(function (sibling) {
 
@@ -1650,27 +1656,59 @@
                     computeBoundries(sibling);
                 }
 
-                if (topmost > sibling.css.top) {
-                    topmost = sibling.css.top
+                if (undefined === topMost) {
+                    topMost = sibling.css.top;
                 }
-                if (bottomost < sibling.css.bottom) {
-                    bottomost = sibling.css.bottom
+
+                if (undefined === bottomMost) {
+                    bottomMost = sibling.css.bottom;
                 }
-                if (leftmost > sibling.css.left) {
-                    leftmost = sibling.css.left;
+
+                if (undefined === leftMost) {
+                    leftMost = sibling.css.left;
                 }
-                if (rightmost < sibling.css.right) {
-                    rightmost = sibling.css.right;
+
+                if (undefined === rightMost) {
+                    rightMost = sibling.css.right;
+                }
+
+                if (topMost > sibling.css.top) {
+                    topMost = sibling.css.top
+                }
+                if (bottomMost < sibling.css.bottom) {
+                    bottomMost = sibling.css.bottom
+                }
+                if (leftMost > sibling.css.left) {
+                    leftMost = sibling.css.left;
+                }
+                if (rightMost < sibling.css.right) {
+                    rightMost = sibling.css.right;
                 }
 
             });
 
-            section.css.top = topmost;
-            section.css.left = leftmost;
-            section.css.bottom = bottomost;
-            section.css.right = rightmost;
-            section.css.width = rightmost - leftmost;
-            section.css.height = bottomost - topmost;
+            if (undefined === topMost) {
+                topMost = sibling.css.top;
+            }
+
+            if (undefined === bottomMost) {
+                bottomMost = sibling.css.bottom;
+            }
+
+            if (undefined === leftMost) {
+                leftMost = sibling.css.left;
+            }
+
+            if (undefined === rightMost) {
+                rightMost = sibling.css.right;
+            }
+
+            section.css.top = topMost;
+            section.css.left = leftMost;
+            section.css.bottom = bottomMost;
+            section.css.right = rightMost;
+            section.css.width = rightMost - leftMost;
+            section.css.height = bottomMost - topMost;
 
         }
 
@@ -1711,7 +1749,7 @@
 
             structure.refreshImageBoundries();
 
-            // structure.refreshParentBoundries();
+            structure.refreshParentBoundries();
 
             structure.saveToJSON();
 
