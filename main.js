@@ -23,6 +23,12 @@
  *
  * @TODO: It seems that sometimes when you leave PSD for a long time opened (observed behaviour),
  *       all new bitmap layers that you create are not exported to files. Investigate further.
+ *
+ * @TODO: In the CFG case study there is a layer which makes the image creation system crash.
+ * Generated: /Users/constantin/Sites/generatorx/test/plugins/generatorx/images/CFG_Dropbox_FINAL_psd_global-ClientChallenge-leafs_left_global-ClientChallenge-leafs_left-Layer-7-copy-10.png
+ * (the layer after the above layer)
+ * Assertion failed: (!ctx->write_in_progress_ && "write already in progress"), function Write, file ../src/node_zlib.cc, line 124.
+ * [1]    48523 abort      node app -f test/plugins
  */
 
 (function () {
@@ -1293,7 +1299,7 @@
 
         Object.keys(config).forEach(function (configKey) {
             _this[configKey] = config[configKey];
-        })
+        });
 
         this.layers = [];
         
@@ -1655,7 +1661,7 @@
                 width: pixmap.width,
                 height: pixmap.height
             }),
-            stream = fs.createWriteStream(_this.currentGeneratedImage.filePath);
+            stream = fs.createWriteStream(this.currentGeneratedImage.filePath);
 
         // @TODO: The pixamp contains the end image width/height. Currently,
         // after generation, all images are parsed to read to real width and height.
@@ -1675,11 +1681,30 @@
 
         png.data = pixels;
 
+        png.on('error', function (error) {
+            console.log(error);
+            console.log('There as an error');
+        });
+
+        png.on('parsed', function (obj) {
+            // PNG pack has finished packing.
+            // Waiting for the PNG pipe to finish.
+        });
+
         png.on('end', function () {
-            stream.end();
+            // PNG pipe has finished sending data. 
+            // Waiting for the Write Stream to finish.
+        });
 
+        stream.on('finish', function(){
+            // The stream has finished pipe-ing the bits.
+            // Waiting for the stream to close.
+        });
+
+        stream.on('close', function(){
+            // The stream has savfely closed.
+            // Everything is finished.
             _this.finishedImage();
-
         });
 
         // Encode the pixmap to the PNG format and stream it to the file.
