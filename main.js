@@ -21,7 +21,8 @@
  *     
  * @TODO: Retrieve the GenX PSD Test File as an image for left to right comparison.
  *
- * 
+ * @TODO: It seems that sometimes when you leave PSD for a long time opened (observed behaviour),
+ *       all new bitmap layers that you create are not exported to files. Investigate further.
  */
 
 (function () {
@@ -226,90 +227,6 @@
         return font;
     }
 
-    function createBoxShadow(shadowStyles, shadowType, elementType) {
-        var property = "",
-            shadow = shadowStyles[shadowType],
-            angle = 0 < shadow.angle ? shadow.angle : 360 + shadow.angle,
-            // 91 is so that the substraction does not result in 0;
-            normalisedAngle = angle - 90 * Math.floor(angle / 91),
-            x,
-            y,
-            percent; 
-
-        if (-1 === ['outerGlow', 'innerGlow'].indexOf(shadowType)) {
-            
-            // @TODO: Accomodate for the chokeMatte property
-            percent = normalisedAngle / 90;
-            if (angle <= 90) {
-                x = - (shadow.distance - shadow.distance * percent);
-                y = shadow.distance * percent;
-            } else if (angle <= 180) {
-                x = shadow.distance * percent;
-                y = shadow.distance - shadow.distance * percent;
-            } else if (angle <= 270) {
-                x = shadow.distance - shadow.distance * percent;
-                y = - shadow.distance * percent;
-            } else if (angle <= 360) {
-                x = - (shadow.distance * percent);
-                y = - (shadow.distance - shadow.distance * percent);
-            }
-
-        } else {
-            x = 0;
-            y = 0;
-        }
-
-        if (true === shadowStyles.outer.active && 'inset' === shadowType) {
-            property += ', ';
-        }
-
-        if (true === shadowStyles.outerGlow.active && 'innerGlow' === shadowType) {
-            property += ', ';
-        }
-
-        // @TODO: For outer glows, create the use case for gradient usage instead
-        // of solid color.
-
-        property += Math.round(x) + 'px ' + Math.round(y) + 'px ';
-    
-        // @TOOD: Establish the relation between innerGlow parameters (chokeMatte and size) and
-        // omolog values in CSS.
-        // It seems that a Choke: 90%, Size: 10px is the same as box-shadow: 0 0 0 10px
-        
-        if ('innerGlow' === shadowType) { 
-            if (0 !== shadow.spread) {
-                property += (shadow.blur - (shadow.blur * shadow.spread / 100)) + 'px ';
-            }
-
-            // If this is a text layer then a pseudo element will be generated for the glow.
-            // The text-shadow does not have an additional parameter.
-            if ('textLayer' !== elementType) {
-                property += shadow.blur + 'px ';
-            }
-        } else if ('outerGlow' === shadowType) {
-            property += shadow.blur + 'px ';
-
-            // Same as above.
-            if ('textLayer' !== elementType) {
-                property += shadow.spread + 'px ';
-            }
-        } else {
-            property += shadow.blur + 'px ';
-        }
-
-        property += ' rgba(' + Math.round(shadow.color.red) + ', '
-            + Math.round(shadow.color.green) + ', '
-            + Math.round(shadow.color.blue) + ', '
-            + (shadow.opacity / 100) + ')';
-
-        if (('inset' === shadowType || 'innerGlow' === shadowType) 
-            && 'textLayer' !== elementType) {
-            property += ' inset';
-        }
-
-        return property;
-    }
-
     /**
      * Creates an instance of Layer.
      * 
@@ -449,6 +366,90 @@
         }
 
         return this;
+    };
+
+    Layer.prototype.createBoxShadow = function(shadowStyles, shadowType, elementType) {
+        var property = "",
+            shadow = shadowStyles[shadowType],
+            angle = 0 < shadow.angle ? shadow.angle : 360 + shadow.angle,
+            // 91 is so that the substraction does not result in 0;
+            normalisedAngle = angle - 90 * Math.floor(angle / 91),
+            x,
+            y,
+            percent; 
+
+        if (-1 === ['outerGlow', 'innerGlow'].indexOf(shadowType)) {
+            
+            // @TODO: Accomodate for the chokeMatte property
+            percent = normalisedAngle / 90;
+            if (angle <= 90) {
+                x = - (shadow.distance - shadow.distance * percent);
+                y = shadow.distance * percent;
+            } else if (angle <= 180) {
+                x = shadow.distance * percent;
+                y = shadow.distance - shadow.distance * percent;
+            } else if (angle <= 270) {
+                x = shadow.distance - shadow.distance * percent;
+                y = - shadow.distance * percent;
+            } else if (angle <= 360) {
+                x = - (shadow.distance * percent);
+                y = - (shadow.distance - shadow.distance * percent);
+            }
+
+        } else {
+            x = 0;
+            y = 0;
+        }
+
+        if (true === shadowStyles.outer.active && 'inset' === shadowType) {
+            property += ', ';
+        }
+
+        if (true === shadowStyles.outerGlow.active && 'innerGlow' === shadowType) {
+            property += ', ';
+        }
+
+        // @TODO: For outer glows, create the use case for gradient usage instead
+        // of solid color.
+
+        property += Math.round(x) + 'px ' + Math.round(y) + 'px ';
+    
+        // @TOOD: Establish the relation between innerGlow parameters (chokeMatte and size) and
+        // omolog values in CSS.
+        // It seems that a Choke: 90%, Size: 10px is the same as box-shadow: 0 0 0 10px
+        
+        if ('innerGlow' === shadowType) { 
+            if (0 !== shadow.spread) {
+                property += (shadow.blur - (shadow.blur * shadow.spread / 100)) + 'px ';
+            }
+
+            // If this is a text layer then a pseudo element will be generated for the glow.
+            // The text-shadow does not have an additional parameter.
+            if ('textLayer' !== elementType) {
+                property += shadow.blur + 'px ';
+            }
+        } else if ('outerGlow' === shadowType) {
+            property += shadow.blur + 'px ';
+
+            // Same as above.
+            if ('textLayer' !== elementType) {
+                property += shadow.spread + 'px ';
+            }
+        } else {
+            property += shadow.blur + 'px ';
+        }
+
+        property += ' rgba(' + Math.round(shadow.color.red) + ', '
+            + Math.round(shadow.color.green) + ', '
+            + Math.round(shadow.color.blue) + ', '
+            + (shadow.opacity / 100) + ')';
+
+        if (('inset' === shadowType || 'innerGlow' === shadowType) 
+            && 'textLayer' !== elementType) {
+            property += ' inset';
+        }
+
+        return property;
     };
 
     /**
@@ -1103,14 +1104,14 @@
 
                         ['outerGlow', 'innerGlow'].forEach(function (glowType) {
                             if (true === value[glowType].active) {
-                                before += createBoxShadow(value, glowType, _this.type);
+                                before += _this.createBoxShadow(value, glowType, _this.type);
                             }
                         });
 
 
                         ['outer', 'inset'].forEach(function (shadowType) {
                             if (true === value[shadowType].active) {
-                                property += createBoxShadow(value, shadowType, _this.type);
+                                property += _this.createBoxShadow(value, shadowType, _this.type);
                             }
                         });
 
@@ -1903,6 +1904,11 @@
         return this;
     };
 
+    Structure.prototype.optimiseCode = function () {
+
+        return this;
+    };
+
     /**
      * Call GeneratorX to parse the document and output the HTML and CSS files.
      * @param  {JSON} document  The PSD exported data
@@ -1929,6 +1935,7 @@
             structure
                 .refreshImageBoundries()
                 .refreshParentBoundries()
+                .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
                 .outputCode();
