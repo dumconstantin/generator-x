@@ -1257,9 +1257,7 @@
 
         content += this.text.replace(/\r/g, '<br />');
 
-        console.log('For ' + this.name + ' has ' + this.siblings.length + ' in ' + this.parent.name);
         this.siblings.forEach(function (sibling) {
-            console.log(sibling.name + 'getHTML for ' + _this.name);
             content += sibling.getHTML();
         });
 
@@ -1305,8 +1303,6 @@
             _this[configKey] = config[configKey];
         });
 
-        this.siblings = [];
-        
         this.html = '';
         this.css = '';
 
@@ -1442,7 +1438,7 @@
             });
         }
 
-        generateCssIds(this.siblings);
+        generateCssIds(this.parent.siblings);
 
         return this;
     };
@@ -1475,7 +1471,7 @@
             });
         }
 
-        linkLayers(this.siblings, this.parent);
+        linkLayers(this.parent.siblings, this.parent);
 
         return this;
     };
@@ -1492,7 +1488,7 @@
         this.html = '';
         this.css = '';
 
-        this.siblings.forEach(function (layer) {
+        this.parent.siblings.forEach(function (layer) {
             _this.html += layer.getHTML();
             _this.css += layer.getCSS();
         });
@@ -1589,7 +1585,7 @@
         
         }
 
-        queueImages(this.siblings);
+        queueImages(this.parent.siblings);
 
         return this;
     };
@@ -1847,7 +1843,7 @@
 
         }
 
-        refreshImageBoundries(this.siblings);
+        refreshImageBoundries(this.parent.siblings);
 
         return this;
     };
@@ -1921,7 +1917,7 @@
             section.css.height = section.css.bottom - section.css.top;
         }
 
-        this.siblings.forEach(function (layer) {
+        this.parent.siblings.forEach(function (layer) {
 
             if ('layerSection' === layer.type && 0 !== layer.siblings.length) {
                 refreshParentBoundries(layer);
@@ -1934,7 +1930,7 @@
 
     Structure.prototype.optimiseCode = function () {
 
-        var layer = this.siblings[0];
+        var layer = this.parent.siblings[0];
 
 
         function isInner(container, innerTest) {
@@ -2002,15 +1998,9 @@
             return elements;
         }
 
-        console.log('Layers length ' + this.siblings.length);
-
-        this.siblings.forEach(function (layer) {
-            console.log('Layer ' + layer.name + ' has ' + layer.siblings.length + ' siblings.');
-        });
-
         // Redo the hierachies based on the actual location of elements
         // and not on the PSD order (Just as a Developer would do)
-        this.siblings.forEach(function (layer) {
+        this.parent.siblings.forEach(function (layer) {
             var innerElements,
                 outerElements;
             
@@ -2038,16 +2028,7 @@
                 layer.siblings.push(element);
             });
 
-            //console.log('Layer ' + layer.name + ' has ' + innerElements.length + ' inside and ' + outerElements.length + ' outside');
         });
-
-        console.log('-------');
-
-        this.siblings.forEach(function (layer) {
-            console.log('Layer ' + layer.name + ' has ' + layer.siblings.length + ' siblings.');
-        });
-
-        console.log('Layer length ' + this.siblings.length);
 
         // Once elements are entered into the new parent they need to maintain
         // their positions.
@@ -2130,6 +2111,7 @@
                 .refreshImageBoundries()
                 .refreshParentBoundries()
                 .optimiseCode()
+                .linkLayers()
                 .saveStructureToJSON()
                 .refreshCode()
                 .outputCode();
@@ -2139,7 +2121,7 @@
         });     
 
         structure
-            .createLayers(structure.siblings, structure.document.layers)
+            .createLayers(structure.parent.siblings, structure.document.layers)
             .linkLayers()
             .generateCssIds()
             .queueImagesForGeneration()
