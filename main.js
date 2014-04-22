@@ -1930,9 +1930,6 @@
 
     Structure.prototype.optimiseCode = function () {
 
-        var layer = this.parent.siblings[0];
-
-
         function isInner(container, innerTest) {
             if (
                 container.css.top < innerTest.css.top
@@ -1998,40 +1995,53 @@
             return elements;
         }
 
+        var remove = [];
+
         // Redo the hierachies based on the actual location of elements
         // and not on the PSD order (Just as a Developer would do)
-        this.parent.siblings.forEach(function (layer) {
-            var innerElements,
-                outerElements;
-            
-            if ('layerSection' === layer.type) {
-                return;
-            }
 
-            innerElements = findElements(layer, isInner);
-            // outerElements = findElements(layer, isOuter);
+        // The slice is create a copy to ensure that the moving
+        // of layers will not affect the loop.
 
-            innerElements.forEach(function (element) {
-                var removeIndex; 
+        function moveLayers(layers) {
+            layers.slice().forEach(function (layer) {
+                var innerElements,
+                    outerElements;
                 
-                // Search for the element index.
-                element.parent.siblings.every(function (sibling, index) {
-                    if (sibling.id === element.id) {
-                        removeIndex = index;
-                        return false;
-                    } else {
-                        return true;
-                    }
+                if ('layerSection' === layer.type) {
+                    moveLayers(layer.siblings);
+                    return;
+                }
+
+                innerElements = findElements(layer, isInner);
+                // outerElements = findElements(layer, isOuter);
+
+                innerElements.forEach(function (element) {
+                    var removeIndex; 
+
+                    // Search for the element index.
+                    element.parent.siblings.every(function (sibling, index) {
+                        if (sibling.id === element.id) {
+                            removeIndex = index;
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    });
+
+                    remove.push({
+                        from: element.parent.siblings,
+                        what: removeIndex
+                    });
+
+                    element.parent.siblings.splice(removeIndex, 1);
+
+                    layer.siblings.push(element);
                 });
-
-                element.parent.siblings.splice(removeIndex, 1);
-                layer.siblings.push(element);
             });
+        }
 
-        });
-
-        // Once elements are entered into the new parent they need to maintain
-        // their positions.
+        moveLayers(this.parent.siblings);
 
         // @TODO 1) 
         // Based on the width/height and positioning decide if 
