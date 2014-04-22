@@ -1255,6 +1255,13 @@
             return '';
         }
 
+
+        // If the section (Group PSD folder) is empty there is no reason to add
+        // the html element.
+        if ('layerSection' === this.type && 0 === this.siblings.length) {
+            return '';
+        }
+
         content += this.text.replace(/\r/g, '<br />');
 
         this.siblings.forEach(function (sibling) {
