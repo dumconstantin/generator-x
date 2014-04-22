@@ -277,6 +277,7 @@
         this.type = layer.type;
         this.text = '';
         this.structure = structure;
+        this.bounds = layer.bounds;
 
         // Will get all possible CSS styles. This is similar to viewing
         // the "computed" Inspector tab.
@@ -1245,7 +1246,8 @@
      * @return {string} The fully generated HTML code.
      */
     Layer.prototype.getHTML = function () {
-        var html = '',
+        var _this = this,
+            html = '',
             content = '',
             attributes = '';
 
@@ -1255,7 +1257,9 @@
 
         content += this.text.replace(/\r/g, '<br />');
 
+        console.log('For ' + this.name + ' has ' + this.siblings.length + ' in ' + this.parent.name);
         this.siblings.forEach(function (sibling) {
+            console.log(sibling.name + 'getHTML for ' + _this.name);
             content += sibling.getHTML();
         });
 
@@ -1301,7 +1305,7 @@
             _this[configKey] = config[configKey];
         });
 
-        this.layers = [];
+        this.siblings = [];
         
         this.html = '';
         this.css = '';
@@ -1438,7 +1442,7 @@
             });
         }
 
-        generateCssIds(this.layers);
+        generateCssIds(this.siblings);
 
         return this;
     };
@@ -1471,7 +1475,7 @@
             });
         }
 
-        linkLayers(this.layers, this.parent);
+        linkLayers(this.siblings, this.parent);
 
         return this;
     };
@@ -1488,7 +1492,7 @@
         this.html = '';
         this.css = '';
 
-        this.layers.forEach(function (layer) {
+        this.siblings.forEach(function (layer) {
             _this.html += layer.getHTML();
             _this.css += layer.getCSS();
         });
@@ -1585,7 +1589,7 @@
         
         }
 
-        queueImages(this.layers);
+        queueImages(this.siblings);
 
         return this;
     };
@@ -1843,7 +1847,7 @@
 
         }
 
-        refreshImageBoundries(this.layers);
+        refreshImageBoundries(this.siblings);
 
         return this;
     };
@@ -1915,10 +1919,9 @@
 
             section.css.width = section.css.right - section.css.left;
             section.css.height = section.css.bottom - section.css.top;
-
         }
 
-        this.layers.forEach(function (layer) {
+        this.siblings.forEach(function (layer) {
 
             if ('layerSection' === layer.type && 0 !== layer.siblings.length) {
                 refreshParentBoundries(layer);
@@ -1930,6 +1933,172 @@
     };
 
     Structure.prototype.optimiseCode = function () {
+
+        var layer = this.siblings[0];
+
+
+        function isInner(container, innerTest) {
+            if (
+                container.css.top < innerTest.css.top
+                && container.css.left < innerTest.css.left
+                && container.css.right > innerTest.css.right
+                && container.css.bottom > innerTest.css.bottom
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        function isOuter(container, outerTest) {
+            if (
+                container.css.top > outerTest.css.top
+                || container.css.left > outerTest.css.left
+                || container.css.right < outerTest.css.right
+                || container.css.bottom < outerTest.css.bottom
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        function findElements(layer, isPosition, layers) {
+            var nextLayer,
+                prevLayer,
+                elements = [];
+
+            if (undefined === layers) {
+                layers = [];
+
+                nextLayer = layer.next;
+                prevLayer = layer.prev;
+
+                while (undefined !== nextLayer) {
+                    layers.push(nextLayer);
+                    nextLayer = nextLayer.next;
+                }
+
+                while (undefined !== prevLayer) {
+                    layers.push(prevLayer);
+                    prevLayer = prevLayer.prev;
+                }
+            }
+
+            layers.forEach(function (verifyLayer) {
+                var innerElements = [];
+                if ('layerSection' === verifyLayer.type) {
+                    // Search inside the section.
+                    innerElements = findElements(layer, isPosition, verifyLayer.siblings);
+                    elements = elements.concat(innerElements);
+                    return;
+                }
+
+                if(isPosition(layer, verifyLayer)) {
+                    elements.push(verifyLayer);
+                }
+            });
+
+            return elements;
+        }
+
+        console.log('Layers length ' + this.siblings.length);
+
+        this.siblings.forEach(function (layer) {
+            console.log('Layer ' + layer.name + ' has ' + layer.siblings.length + ' siblings.');
+        });
+
+        // Redo the hierachies based on the actual location of elements
+        // and not on the PSD order (Just as a Developer would do)
+        this.siblings.forEach(function (layer) {
+            var innerElements,
+                outerElements;
+            
+            if ('layerSection' === layer.type) {
+                return;
+            }
+
+            innerElements = findElements(layer, isInner);
+            // outerElements = findElements(layer, isOuter);
+
+            innerElements.forEach(function (element) {
+                var removeIndex; 
+                
+                // Search for the element index.
+                element.parent.siblings.every(function (sibling, index) {
+                    if (sibling.id === element.id) {
+                        removeIndex = index;
+                        return false;
+                    } else {
+                        return true;
+                    }
+                });
+
+                element.parent.siblings.splice(removeIndex, 1);
+                layer.siblings.push(element);
+            });
+
+            //console.log('Layer ' + layer.name + ' has ' + innerElements.length + ' inside and ' + outerElements.length + ' outside');
+        });
+
+        console.log('-------');
+
+        this.siblings.forEach(function (layer) {
+            console.log('Layer ' + layer.name + ' has ' + layer.siblings.length + ' siblings.');
+        });
+
+        console.log('Layer length ' + this.siblings.length);
+
+        // Once elements are entered into the new parent they need to maintain
+        // their positions.
+
+        // @TODO 1) 
+        // Based on the width/height and positioning decide if 
+        // an element is floated or static positioned.
+        
+        // For elements that are outside the bottomMost layer we can keep
+        // an absolute positioning.
+        // Based on the location where these elements cross the boundries of the
+        // bottomMost layer we can obtain the position (bottom) for example to 
+        // keep the layer always at the bottom of the parent element regadrless
+        // how much it will be expanding.
+
+        // Need to establish padding and margin consideration for layers.
+        // This can be initially calculated as the difference between
+        // the boounds without FX and the sibling boundries without FX.
+        // Because containers do not currenly have any backgrounds we need 
+        // to rely on stacking detection do decide if the sibling of Folder 1
+        // is the background of the sibling Folder 2 of Folder 1, Layer 1.
+        // 
+        // @TODO Create a stacking map of all layers based on which patterns
+        // will emerge.
+        // 
+        // Get all the sibling layers that are not sections and check their boundries.
+        // Also siblings on the same level are guided by the zIndex property for stacking
+        // but still require intersection detection.
+
+
+        // @TODO 2)
+        // Take inheritable styles and move the up the chain to the parent.
+        // Remove the properties from the children.
+
+        // @TODO 2)
+        // Find patterns in the CSS styles and create classes 
+        // Remove all styles where the CSS clases are applied
+        // Do not add in classes absolute position or boundries
+        
+        // @TODO 3)
+        // When IDS do not have styles remaining then they can be safely removed
+        // from the HTML and just DOM structure inheritance and classes can sustain
+        // the element styling.
+
+        // @TODO 4)
+        // Parse the three again and remove all layerSections that do not have any containing 
+        // elements.
+
+        // @TODO 5)
+        // Make sure that the layers that become parents can be parents e.g. an element
+        // that is text cannot contain other child positioned elements.
 
         return this;
     };
@@ -1970,7 +2139,7 @@
         });     
 
         structure
-            .createLayers(structure.layers, structure.document.layers)
+            .createLayers(structure.siblings, structure.document.layers)
             .linkLayers()
             .generateCssIds()
             .queueImagesForGeneration()
