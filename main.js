@@ -1459,6 +1459,10 @@
 
                 layer.parent = parent;
 
+                if (undefined === layer.initialParent) {
+                    layer.initialParent = parent;
+                }
+
                 if (0 < index) {
                     layer.prev = layers[index - 1];
                 }
