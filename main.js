@@ -121,6 +121,16 @@
         return stringified;
     }
 
+    function isNumber(value) {
+        if ((undefined === value) || (null === value)) {
+            return false;
+        }
+        if (typeof value == 'number') {
+            return true;
+        }
+        return !isNaN(value - 0);
+    }
+
     /**
      * Convert camelCase strings to hyphen separated words.
      *
@@ -915,8 +925,12 @@
 
         switch (name) {
             case 'top':
-                // Convert from absolute top to relative to parent top.
-                property += Math.round(value) - Math.round(this.parent.css.top) + 'px';
+                if (isNumber(value)) {
+                    // Convert from absolute top to relative to parent top.
+                    property += Math.round(value) - Math.round(this.parent.css.top) + 'px';
+                } else {
+                    property += value;
+                }
             break;
             
             case 'right':
@@ -928,11 +942,51 @@
             break;
 
             case 'left':
-                // Convert from absolute left to relative to parent left.
-                property += Math.round(value) - Math.round(this.parent.css.left) + 'px';
+                if (isNumber(value)) {
+                    // Convert from absolute top to relative to parent left.
+                    property += Math.round(value) - Math.round(this.parent.css.left) + 'px';
+                } else {
+                    property += value;
+                }
             break;
 
             case 'position':
+                property += value;
+            break;
+
+            case 'marginTop':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'marginLeft':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'marginRight':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'marginBottom':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'paddingTop':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'paddingLeft':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'paddingRight':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'paddingBottom':
+                property += Math.round(value) + 'px';
+            break;
+
+            case 'verticalAlign':
                 property += value;
             break;
 
@@ -1145,6 +1199,12 @@
                
             break;
 
+            case 'display':
+
+                property += value;
+
+            break;
+
             default: 
                 console.log('CSS property "' + name + '" is not regonized.');
             break;
@@ -1312,6 +1372,7 @@
 
         this.html = '';
         this.css = '';
+        this.sections = {};
 
         this.psdPath = this.document.file;
         this.psdName = this.psdPath.substr(this.psdPath.lastIndexOf('/') + 1, this.psdPath.length);
@@ -1472,10 +1533,14 @@
 
                 if (0 < index) {
                     layer.prev = layers[index - 1];
+                } else {
+                    layer.prev = undefined;
                 }
 
                 if (layers.length > index + 1) {
                     layer.next = layers[index + 1];
+                } else {
+                    layer.next = undefined;
                 }
      
                 linkLayers(layer.siblings, layer);
@@ -1498,8 +1563,19 @@
 
         this.html = '';
         this.css = '';
+        this.sections = {};
 
         this.parent.siblings.forEach(function (layer) {
+            if ('layerSection' === layer.type) {
+                if ('header' === layer.name) {
+                    _this.sections[layer.name] = {
+                        name: layer.name,
+                        html: layer.getHTML(),
+                        css: layer.getCSS()
+                    };
+                }
+            }
+
             _this.html += layer.getHTML();
             _this.css += layer.getCSS();
         });
@@ -1517,7 +1593,15 @@
      * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.outputCode = function () {
-        
+        var _this = this;
+
+        Object.keys(this.sections).forEach(function (sectionName) {
+            var section = _this.sections[sectionName];
+            fs.writeFileSync(_this.folders.site + section.name + '.html', section.html);
+            fs.writeFileSync(_this.folders.site + section.name + '.css', section.css);
+        });
+
+
         fs.writeFileSync(this.files.html, this.html);
         fs.writeFileSync(this.files.css, this.css);
 
@@ -1967,6 +2051,19 @@
             }
         }
 
+        function isOverlay(container, overlayTest) {
+
+            if (container.css.top < overlayTest.css.bottom
+                && container.css.bottom > overlayTest.css.top
+                && container.css.left < overlayTest.css.right
+                && container.css.right > overlayTest.css.left
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
         function findElements(layer, isPosition, layers) {
             var nextLayer,
                 prevLayer,
@@ -2006,8 +2103,6 @@
             return elements;
         }
 
-        var remove = [];
-
         // Redo the hierachies based on the actual location of elements
         // and not on the PSD order (Just as a Developer would do)
 
@@ -2040,11 +2135,6 @@
                         }
                     });
 
-                    remove.push({
-                        from: element.parent.siblings,
-                        what: removeIndex
-                    });
-
                     element.parent.siblings.splice(removeIndex, 1);
 
                     layer.siblings.push(element);
@@ -2053,6 +2143,199 @@
         }
 
         moveLayers(this.parent.siblings);
+
+        // @TODO Find floats.
+
+        // Consider margin collapsation.
+
+        // We cannot use the clearfix attribute because we might need sometime to 
+        // use the before, after for styling.
+        
+        // Use inline-block instead of floats.
+
+        // Order elements based on their left to right order.
+
+
+        function orderByRow(siblings) {
+
+            log(siblings, 'row started');
+
+            siblings.sort(function (left, right) {
+                if (left.css.top > right.css.top) {
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            siblings.forEach(function (sibling) {
+                if (0 < sibling.siblings.length) {
+                    orderByRow(sibling.siblings);
+                }
+            });
+
+            log(siblings, 'row finished');
+        }
+
+        function log(siblings, logName) {
+            var order = '[';
+            siblings.forEach(function (sibling) {
+                order += sibling.name + ' ';
+            });
+            order += ']';
+
+            console.log (logName + ' the order is ' + order);
+        }
+
+        function orderByColumn(siblings) {
+            var sibling,
+                tempSibling,
+                currentSibling,
+                lastTop,
+                index = 0,
+                counter,
+                rowIndex;
+
+            log(siblings, 'column started');
+
+            while (index !== siblings.length) {
+                
+                if (1000 < counter) {
+                    break;
+                }
+                counter += 1;
+                
+                if (undefined !== siblings[index - 1] && lastTop === siblings[index - 1].css.top &&
+                    lastTop === siblings[index].css.top) {
+                    if (siblings[index - 1].css.left > siblings[index].css.left) {
+                        tempSibling = siblings[index - 1];
+                        siblings[index - 1] = siblings[index];
+                        siblings[index] = tempSibling;
+                        index -= 2;
+                    }
+                } else if (rowIndex !== index) {
+                    // We record as a new row and wait for the next element.
+                    lastTop = siblings[index].css.top;
+                    rowIndex = index;
+                }
+
+                index += 1;
+            }
+
+
+            log(siblings, 'column finished');
+
+        }
+
+        orderByRow(this.parent.siblings[0].siblings);
+        orderByColumn(this.parent.siblings[0].siblings);
+
+        this.linkLayers();
+
+
+        // The first element is now the top most left most element from which we can extract 
+        // the paddings.
+        var bg = this.parent.siblings[0];
+        bg.css.paddingLeft = bg.siblings[0].css.left - bg.css.left;
+        bg.css.paddingTop = bg.siblings[0].css.top - bg.css.top;
+
+        this.parent.siblings[0].siblings.forEach(function (sibling) {
+            if (undefined !== sibling.prev) {
+
+                if (sibling.prev.css.top === sibling.css.top) {
+                    sibling.css.marginLeft = sibling.css.left - sibling.prev.right;
+                } else {
+
+                }
+
+            }
+
+            sibling.css.top = 'auto';
+            sibling.css.left = 'auto';
+            sibling.css.position = 'static';
+            sibling.css.display = 'inline-block';
+        });
+
+        // Define the rows! Only then will you be able to further optimise.
+
+        // Order all layers 
+
+        // Find static elements.
+/*
+        this.parent.siblings.forEach(function (sibling) {
+
+            // Find the first element
+            sibling.siblings.every(function (innerSibling) {
+                if (
+                    innerSibling.css.left )
+            });
+        })
+*/
+
+        // Make all elements that are aligned to one and the other inline-blocK
+        
+
+
+        /*
+        // If an element overlaps it needs to remain positioned absolute.
+        
+        bg.siblings.forEach(function (sibling) {
+            var overlays = findElements(sibling, isOverlay),
+                names = "";
+
+
+            overlays.forEach(function (overlay) {
+                names += overlay.name + ' ';
+            });
+            console.log(sibling.name + ' has overlays: ' + names);
+            // decide if elements overlap
+            // Order them by index and then extract the ones that are at the bottom.
+        });
+
+        var referenceDistance = bg.siblings[1].css.left - bg.siblings[0].css.right;
+
+        console.log(referenceDistance);
+        */
+        /*
+        // Get the margins for the parent.
+        bg.css.paddingLeft = bg.siblings[0].css.left - bg.css.left;
+        bg.css.paddingTop = bg.siblings[0].css.top - bg.css.top;
+
+        bg.css.width -= bg.css.paddingLeft;
+        bg.css.height -= bg.css.paddingTop;
+
+        // Find elements that do not touch one and odder to have a gap
+        // between them
+
+        bg.siblings.forEach(function (sibling) {
+            if (undefined !== sibling.prev) {
+                sibling.css.marginLeft = sibling.css.left - sibling.prev.css.right;
+            }
+        });
+        */
+
+
+
+        /*
+        bg.siblings.forEach(function (sibling) {
+            sibling.css.display = 'inline-block';
+            sibling.css.verticalAlign = 'top';
+            sibling.css.position = 'static';
+            sibling.css.left = 'auto';
+            console.log('Element ' + sibling.name);
+        }); */
+
+/*
+        bg.siblings.forEach(function (sibling) {
+            if ()
+
+            if (sibling.css.right < sibling.next.css.left) {
+                sibling.css.display = "inline-block";
+            } else {
+
+            }
+        });
+*/
 
         // @TODO 1) 
         // Based on the width/height and positioning decide if 
@@ -2079,7 +2362,6 @@
         // Also siblings on the same level are guided by the zIndex property for stacking
         // but still require intersection detection.
 
-
         // @TODO 2)
         // Take inheritable styles and move the up the chain to the parent.
         // Remove the properties from the children.
@@ -2102,6 +2384,11 @@
         // Make sure that the layers that become parents can be parents e.g. an element
         // that is text cannot contain other child positioned elements.
 
+        // @TODO 6)
+        // Detect images wrapped around text. Create a test case for such scenario.
+
+
+
         return this;
     };
 
@@ -2114,7 +2401,8 @@
     function runGenerator(document, generator) {
         var structure = new Structure({
             folders: {
-                images: path.resolve(__dirname, 'images/') + '/'
+                images: path.resolve(__dirname, 'images/') + '/',
+                site: path.resolve(__dirname, 'site/') + '/'
             },
             files: {
                 html: path.resolve(__dirname, 'index.html'),
@@ -2131,8 +2419,7 @@
             structure
                 .refreshImageBoundries()
                 .refreshParentBoundries()
-                .optimiseCode()
-                .linkLayers()
+                // .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
                 .outputCode();
