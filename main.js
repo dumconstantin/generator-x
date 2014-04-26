@@ -39,7 +39,9 @@
         path = require('path'),
         PNG = require('pngjs').PNG,
         events = new require('events'),
-        sizeOf = require('image-size');
+        sizeOf = require('image-size'),
+        jsdom = require("jsdom"),
+        Wordpress = require('./wordpress');
 
     //
     // Has method
@@ -1309,7 +1311,8 @@
         var _this = this,
             html = '',
             content = '',
-            attributes = '';
+            attributes = '',
+            src = '';
 
         if (false === this.visible) {
             return '';
@@ -1328,9 +1331,15 @@
             content += sibling.getHTML();
         });
 
+        if (undefined !== this._get('wordpress.url')) {
+            content = '<a href="' + this._get('wordpress.url') + '">' + content + '</a>';
+        }
+
+        src = this._get('structure.wordpress.folders.images', this.structure.folders.images) + this.fileName;
+
         switch (this.tag) {
             case 'img':
-                html += '\n<' + this.tag + ' id="' + this.cssId + '" src="' + (this.structure.folders.images + this.fileName) + '" />';
+                html += '\n<' + this.tag + ' id="' + this.cssId + '" src="' + src + '" />';
             break;
 
             case 'div':
@@ -1563,19 +1572,8 @@
 
         this.html = '';
         this.css = '';
-        this.sections = {};
 
         this.parent.siblings.forEach(function (layer) {
-            if ('layerSection' === layer.type) {
-                if ('header' === layer.name) {
-                    _this.sections[layer.name] = {
-                        name: layer.name,
-                        html: layer.getHTML(),
-                        css: layer.getCSS()
-                    };
-                }
-            }
-
             _this.html += layer.getHTML();
             _this.css += layer.getCSS();
         });
@@ -1595,19 +1593,45 @@
     Structure.prototype.outputCode = function () {
         var _this = this;
 
-        Object.keys(this.sections).forEach(function (sectionName) {
-            var section = _this.sections[sectionName];
-            fs.writeFileSync(_this.folders.site + section.name + '.html', section.html);
-            fs.writeFileSync(_this.folders.site + section.name + '.css', section.css);
-        });
-
-
         fs.writeFileSync(this.files.html, this.html);
         fs.writeFileSync(this.files.css, this.css);
 
         console.log('Index.html and style.css were created.');
 
         return this;
+    };
+
+    Structure.prototype.outputToWordpress = function () {
+        var _this = this;
+
+        this.wordpress = new Wordpress({
+            folders: this.folders,
+            layers: this.parent.siblings
+        });
+
+        this.wordpress
+            .parseLayers()
+            .create('menu')
+           // .register('header');
+
+        /*
+        var exec = require("child_process").exec;
+        exec('php ' + _this.folders.wordpress + 'addMenu.php', function (error, stdout, stderr) {
+            var response = JSON.parse(stdout);
+            if (undefined !== response.term_id) {
+
+            } else {
+                console.log('Menu was not added');
+            }
+        });*/
+
+        
+
+        /*
+        console.log('Saving section to ' + _this.folders.wordpress + section.name + '.html');
+        section.html += '<link href="' + section.name + '.css" rel="stylesheet" />'; 
+        fs.writeFileSync(_this.folders.wordpress + section.name + '.html', section.html);
+        fs.writeFileSync(_this.folders.wordpress + section.name + '.css', section.css); */
     };
 
     /**
@@ -2401,8 +2425,8 @@
     function runGenerator(document, generator) {
         var structure = new Structure({
             folders: {
-                images: path.resolve(__dirname, 'images/') + '/',
-                site: path.resolve(__dirname, 'site/') + '/'
+                images: path.resolve(__dirname, 'wordpress/images/') + '/',
+                wordpress: path.resolve(__dirname, 'wordpress/') + '/'
             },
             files: {
                 html: path.resolve(__dirname, 'index.html'),
@@ -2410,6 +2434,7 @@
                 document: path.resolve(__dirname, 'document.json'),
                 structure: path.resolve(__dirname, 'structure.json')
             },
+            wordpress: {},
             document: document,
             generator: generator
         });
@@ -2422,10 +2447,11 @@
                 // .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
-                .outputCode();
+                // .outputCode();
+                .outputToWordpress();
 
             // All work is done and can safely exit.
-            process.exit(0);
+            // process.exit(0);
         });     
 
         structure
