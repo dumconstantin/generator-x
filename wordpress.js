@@ -1,5 +1,6 @@
 
-var mustache = require('Mustache'),
+var fs = require('fs'),
+    mustache = require('Mustache'),
     events = require('events'),
     exec = require("child_process").exec;
 
@@ -54,8 +55,8 @@ WordpressItem.prototype.create = function (props) {
 
 };
 
-WordpressItem.prototype.created = function () {
-    console.log('Method is not implemented by ' + this.type + '.');
+WordpressItem.prototype.findLayersBy = function (propertyName, value) {
+    return this.wordpress.findLayersBy(propertyName, value, this.layer.siblings);
 };
 
 /**
@@ -64,9 +65,36 @@ WordpressItem.prototype.created = function () {
  * @param {[type]} config    [description]
  */
 function Header(wordpress, config) {
+    var _this = this;
 
+    WordpressItem.call(this, wordpress, config);
+
+    this.items = {
+        menus: []
+    };
+
+    this.findLayersBy('name', /^menu\./gi).forEach(function (menu) {
+        var reference = _this.wordpress.getReferenceTo(menu);
+
+        if (undefined !== reference) {
+            _this.items.menus.push(reference);
+        }
+    });
 }
 
+Header.prototype = Object.create(WordpressItem.prototype);
+Header.prototype.constructor = Header;
+
+Header.prototype.created = function () {
+    console.log('The header was created');
+};
+
+
+/**
+ * Page constructor.
+ * @param {[type]} wordpress [description]
+ * @param {[type]} config    [description]
+ */
 function Page(wordpress, config) {
     WordpressItem.call(this, wordpress, config);
 }
@@ -96,7 +124,7 @@ Page.prototype.linkTo = function (menuId) {
     if (false === this.status.created) {
         postponed = function () {
             console.log('Launched postponed action');
-            this.events.removeListener('created', postponed);
+            _this.events.removeListener('created', postponed);
             _this.linkTo(menuId);
         };
 
@@ -126,13 +154,31 @@ function Menu(wordpress, config) {
     WordpressItem.call(this, wordpress, config);
 
 
-    this.pages = [];
+    this.items = {
+        pages: []
+    };
+
+    this.layerReferences = {
+        getHTML: this.layer.getHTML.bind(this.layer),
+        getCSS: this.layer.getCSS
+    };
+
+    this.layer.getHTML = function () {
+        console.log('Will get the HTML for the menu');
+        console.log(_this.layerReferences.getHTML());
+    };
+
+    this.layer.getCSS = function () {
+
+    };
 
     _this.findLayersBy('name', /^page\./gi).forEach(function (page) {
-        _this.pages.push(_this.wordpress.getReferenceTo('page', page);
-    });
+        var reference = _this.wordpress.getReferenceTo(page);
 
-    this.itmes.pages.
+        if (undefined !== reference) {
+            _this.items.pages.push(reference);
+        }
+    });
 
 }
 
@@ -156,7 +202,8 @@ Menu.prototype.created = function () {
 };
 
 Menu.prototype.linkPages = function () {
-    var _this = this;
+    var _this = this;    
+
     this.items.pages.forEach(function (page) {
         page.linkTo(_this.properties.id);
     });
@@ -208,22 +255,40 @@ function Wordpress(config) {
     };
 
     this.items = {
-        menu: [],
+        menus: [],
         pages: [],
-        header: {}
+        headers: []
     };
 
     this.entrypoint = this.folders.wordpress + 'wp_seed.php ';
 }
 
+Wordpress.prototype.getReferenceTo = function (obj) {
+    var _this = this,
+        reference;
+
+    Object.keys(this.items).every(function (itemListName) {
+        _this.items[itemListName].forEach(function (item) {
+            if (item.layer === obj) {
+                reference = item;
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        if (undefined !== reference) {
+            return false;
+        } else {
+            return true;
+        }
+    });
+
+    return reference;
+};
+
 Wordpress.prototype.parseLayers = function () {
     var _this = this;
-
-    this.findLayersBy('name', /^menu\./gi).forEach(function (menuLayer) {
-        _this.items.menu.push(_this.createItem('menu', {
-            layer: menuLayer
-        }));
-    });
 
     this.findLayersBy('name', /^page\./gi).forEach(function (pageLayer) {
         _this.items.pages.push(_this.createItem('page', {
@@ -231,9 +296,19 @@ Wordpress.prototype.parseLayers = function () {
         }));
     });
 
-    this.items.header = this.createItem('header', {
-        layer: this.findLayersBy('name', /^header/gi)[0]
+    this.findLayersBy('name', /^menu\./gi).forEach(function (menuLayer) {
+        _this.items.menus.push(_this.createItem('menu', {
+            layer: menuLayer
+        }));
     });
+
+    this.findLayersBy('name', /^header/gi).forEach(function (headerLayer) {
+        _this.items.headers.push(_this.createItem('header', {
+            layer: headerLayer
+        }));
+    });
+
+
 
     return this;
 };
@@ -323,8 +398,19 @@ Wordpress.prototype.findLayersBy = function (propertyName, value, siblings) {
 
 Wordpress.prototype.output = function () {
 
-    // this.items.menu 
+    var headerFile = fs.readFileSync(this.folders.wordpress + 'templates/header.php',  'utf8');
 
+    var header = this.items.headers[0];
+
+    header.layer.getHTML();
+    /*
+    var output = mustache.render(headerFile, {
+        masthead: section.html
+    });
+
+    fs.writeFileSync(_this.folders.wordpress + 'header.php', output);
+    fs.writeFileSync(_this.folders.wordpress + 'generator.css', section.css);
+    */
 };
 
 
@@ -355,21 +441,6 @@ Wordpress.prototype.output = function () {
 
         
 
-function makeOutput() {
-     var section = {
-        name: xheader.name,
-        html: xheader.getHTML(),
-        css: xheader.getCSS()
-    };
-
-    var headerFile = fs.readFileSync(_this.folders.wordpress + 'templates/header.php',  'utf8');
-
-    var output = mustache.render(headerFile, {
-        masthead: section.html
-    });
-    fs.writeFileSync(_this.folders.wordpress + 'header.php', output);
-    fs.writeFileSync(_this.folders.wordpress + 'generator.css', section.css);
-}
 */
 
 module.exports = Wordpress;
