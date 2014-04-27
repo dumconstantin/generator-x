@@ -377,6 +377,8 @@
             if (undefined !== layer.boundsWithFX) {
                 this.boundsWithFX = layer.boundsWithFX
             }
+
+            this.folder = structure.folders.images;
         }
 
         // Create the nested Layers.
@@ -1335,7 +1337,7 @@
             content = '<a href="' + this._get('wordpress.url') + '">' + content + '</a>';
         }
 
-        src = this._get('structure.wordpress.folders.images', this.structure.folders.images) + this.fileName;
+        src = this.structure.folders.src + this.fileName;
 
         switch (this.tag) {
             case 'img':
@@ -2426,10 +2428,15 @@
      * @return {undefined}
      */
     function runGenerator(document, generator) {
+
+        // TODO: Create image movers. Instead of exporting images to the wordpress
+        // or other integration path, export images to the generator path
+        // and the let integrations to get their desired images to their images
+        // folder.
         var structure = new Structure({
             folders: {
                 images: path.resolve(__dirname, 'wordpress/images/') + '/',
-                wordpress: path.resolve(__dirname, 'wordpress/') + '/'
+                src: path.resolve(__dirname, 'wordpress/images/') + '/'
             },
             files: {
                 html: path.resolve(__dirname, 'index.html'),
