@@ -1,5 +1,6 @@
 
 var fs = require('fs'),
+    path = require('path'),
     mustache = require('Mustache'),
     events = require('events'),
     exec = require("child_process").exec;
@@ -293,9 +294,13 @@ function Wordpress(config) {
         header: config.folders.wordpress + 'header.php'
     };
 
-    this.folders = {
-        wordpress: config.folders.wordpress
-    };
+    this.folders = config.folders;
+
+    // Overwrite also the structure folder due to config.folders comming through
+    // reference.
+    this.folders.wordpress = path.resolve(__dirname, 'wordpress/') + '/';
+    this.folders.images = this.folders.wordpress + 'images/';
+    this.folders.src = 'http://generator/wp-content/themes/generator/images/';
 
     this.templates = {
         header: this.folders.wordpress + 'templates/header.php'
@@ -373,7 +378,7 @@ Wordpress.prototype.parseLayers = function () {
         }));
     });
 
-    this.findLayersBy('name', /^header/gi).forEach(function (headerLayer) {
+    this.findLayersBy('name', /^header\./gi).forEach(function (headerLayer) {
         _this.items.headers.push(_this.createItem('header', {
             layer: headerLayer
         }));
@@ -398,6 +403,7 @@ Wordpress.prototype.checkReady = function () {
         }
     });
 
+    console.log('Ready was checked: ' + ready + ' vs ' + (Object.keys(this.status.items).length - 1));
     if (ready === Object.keys(this.status.items).length - 1) {
         this.ready();
     }
