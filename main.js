@@ -1498,7 +1498,8 @@
                         .replace(/^[0-9]/g, 'a')
                         .replace(/\s/g, '-')
                         .replace(/,/g, '-')
-                        .replace(/\//g, '');
+                        .replace(/\//g, '')
+                        .replace(/\./g, '-');
 
                 if (-1 === _this.cssIds.indexOf(layer.cssId)) {
                     // The ID is unique and can be used.
@@ -1611,7 +1612,9 @@
 
         this.wordpress
             .parseLayers()
-            .create('menu')
+            // .create('menu')
+            // .create('pages')
+            .output();
            // .register('header');
 
         /*
