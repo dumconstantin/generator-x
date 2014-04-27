@@ -1612,8 +1612,8 @@
 
         this.wordpress
             .parseLayers()
-            // .create('menu')
-            // .create('pages')
+            .create('menus')
+            .create('pages')
             .output();
            // .register('header');
 
