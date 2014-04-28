@@ -1352,6 +1352,9 @@
                 html += '\n<' + this.tag + ' id="' + this.cssId + '">' + content + '</' + this.tag + '>';
 
             break;
+            case 'a':
+                html += '\n<a id="' + this.cssId + '" href="' + this.href + '">' + content + '</a>';
+            break;
         }
 
         return html;
@@ -1613,9 +1616,14 @@
         });
 
         this.wordpress
+            .resetWordpress()
             .parseLayers()
             .create('menus')
             .create('pages')
+            .create('banners')
+            .create('contents')
+            .create('posts')
+            .create('sidebars')
             .output();
            // .register('header');
 
