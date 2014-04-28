@@ -149,11 +149,10 @@
         Object.keys(font).forEach(function (variant) {
             fontFace += "@font-face {"
                 + "font-family: '" + font[variant] + "'; "
-                + " src: url('fonts/roboto-" + variant + ".eot'); "
-                + " src: url('fonts/roboto-" + variant + ".eot?#iefix') format('embedded-opentype')," 
-                + "     url('fonts/roboto-" + variant + ".woff') format('woff'),"
-                + "    url('fonts/roboto-" + variant + ".ttf') format('truetype'),"
-                + "    url('fonts/roboto-" + variant + ".svg#" + fontName + variant + "') format('svg');"
+                + " src: url('fonts/" + fontName + "-" + variant + ".eot'); "
+                + "     url('fonts/" + fontName + "-" + variant + ".woff') format('woff'),"
+                + "    url('fonts/" + fontName + "-" + variant + ".ttf') format('truetype'),"
+                + "    url('fonts/" + fontName + "-" + variant + ".svg#" + fontName + variant + "') format('svg');"
                 + "font-weight: normal;"
                 + "font-style: normal;"
                 + "}";
@@ -179,6 +178,45 @@
             break;
 
             case 'Futura':
+
+            break;
+
+            case 'MavenProBold':
+
+                font += generateFontFace({
+                    regular: 'maven_pro_bold'
+                }, 'maven_pro_bold');
+            break;
+
+            case 'MavenProBlack':
+
+                font += generateFontFace({
+                    regular: 'maven_pro_black'
+                }, 'maven_pro_bold');
+            break;
+
+            case 'MavenProMedium':
+
+                font += generateFontFace({
+                    regular: 'maven_pro_medium'
+                }, 'maven_pro_bold');
+            break;
+
+
+            case 'MavenProRegular':
+
+                font += generateFontFace({
+                    regular: 'maven_pro_regular'
+                }, 'maven_pro_regular');
+            break;
+
+            case 'Maven Pro':
+
+                font += generateFontFace({
+                    bold: 'maven_pro_bold',
+                    regular: 'maven_pro_regular',
+                    medium: 'maven_pro_medium'
+                }, 'maven_pro');
 
             break;
 
@@ -238,7 +276,9 @@
             break;
 
             default:
-                // console.log('The font name "' + fontName + '" is not supported.');
+                if ('' !== fontName) {
+                    console.log('The font name "' + fontName + '" is not supported.');
+                }
             break;
         }
 
@@ -2465,8 +2505,8 @@
                 // .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
-                // .outputCode();
-                .outputToWordpress();
+                .outputCode();
+                //.outputToWordpress();
 
             // All work is done and can safely exit.
             // process.exit(0);
