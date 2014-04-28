@@ -1381,7 +1381,7 @@
             content = '<a href="' + this._get('wordpress.url') + '">' + content + '</a>';
         }
 
-        src = this.filePath;
+        src = this.fileSrc;
 
         switch (this.tag) {
             case 'img':
@@ -1546,9 +1546,7 @@
                         .replace(/^\//g, 'a')
                         .replace(/^[0-9]/g, 'a')
                         .replace(/\s/g, '-')
-                        .replace(/,/g, '-')
-                        .replace(/\//g, '')
-                        .replace(/\./g, '-');
+                        .replace(/[@\':\.\/,+]/g, '');
 
                 if (-1 === _this.cssIds.indexOf(layer.cssId)) {
                     // The ID is unique and can be used.
@@ -1667,6 +1665,7 @@
             .create('banners')
             .create('contents')
             .create('sidebars')
+            .create('footers')
             .output();
            // .register('header');
 
@@ -1734,6 +1733,7 @@
                     
                     layer.fileName = _this.psdName.replace(/\./g, '_') + '_' + layer.parent.cssId + '_' + layer.cssId + '.png';
                     layer.filePath = _this.folders.images + layer.fileName;
+                    layer.fileSrc = _this.folders.src + layer.fileName;
 
                     if (true === fs.existsSync(layer.filePath)) {
 
@@ -2486,7 +2486,8 @@
         // folder.
         var structure = new Structure({
             folders: {
-                images: path.resolve(__dirname, 'wordpress/images/') + '/'
+                images: path.resolve(__dirname, 'wordpress/images/') + '/',
+                src: 'wp-content/themes/generator/images/'
             },
             files: {
                 html: path.resolve(__dirname, 'index.html'),
@@ -2507,8 +2508,8 @@
                 // .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
-                .outputCode();
-                // .outputToWordpress();
+                // .outputCode();
+                .outputToWordpress();
 
             // All work is done and can safely exit.
             // process.exit(0);
