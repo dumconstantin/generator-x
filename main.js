@@ -543,7 +543,7 @@
             textRanges.forEach(function (range) {
                 var extractedText = text.substr(range.from, range.to - range.from),
                     styles = "",
-                    fontFamily = range.textStyle.fontName.toLowerCase(),
+                    fontFamily = range.textStyle.fontName.toLowerCase().replace(' ', '_'),
                     fontVariant = range.textStyle.fontStyleName.replace(/\s/g, '_').toLowerCase();
 
                 // For some reason Photoshop sometimes returns a duplicated
@@ -554,7 +554,7 @@
 
                 lastParsedIndex = range.to;
 
-                styles += 'font-family: ' + fontFamily.toLowerCase();
+                styles += 'font-family: ' + fontFamily.toLowerCase().replace(' ', '_');
 
                 if ('regular' !== fontVariant) {
                     styles += fontVariant + ';';
@@ -1381,7 +1381,7 @@
             content = '<a href="' + this._get('wordpress.url') + '">' + content + '</a>';
         }
 
-        src = this.structure.folders.src + this.fileName;
+        src = this.filePath;
 
         switch (this.tag) {
             case 'img':
@@ -1666,7 +1666,6 @@
             .create('pages')
             .create('banners')
             .create('contents')
-            .create('posts')
             .create('sidebars')
             .output();
            // .register('header');
@@ -2487,8 +2486,7 @@
         // folder.
         var structure = new Structure({
             folders: {
-                images: path.resolve(__dirname, 'wordpress/images/') + '/',
-                src: path.resolve(__dirname, 'wordpress/images/') + '/'
+                images: path.resolve(__dirname, 'wordpress/images/') + '/'
             },
             files: {
                 html: path.resolve(__dirname, 'index.html'),
@@ -2510,7 +2508,7 @@
                 .saveStructureToJSON()
                 .refreshCode()
                 .outputCode();
-                //.outputToWordpress();
+                // .outputToWordpress();
 
             // All work is done and can safely exit.
             // process.exit(0);
