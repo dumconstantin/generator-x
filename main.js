@@ -146,10 +146,12 @@
     function generateFontFace(font, fontName) {
         var fontFace = '';
 
+
         Object.keys(font).forEach(function (variant) {
             fontFace += "@font-face {"
                 + "font-family: '" + font[variant] + "'; "
                 + " src: url('fonts/" + fontName + "-" + variant + ".eot'); "
+                + " src: url('fonts/" + fontName + "-" + variant + ".eot?#iefix') format('embedded-opentype')," 
                 + "     url('fonts/" + fontName + "-" + variant + ".woff') format('woff'),"
                 + "    url('fonts/" + fontName + "-" + variant + ".ttf') format('truetype'),"
                 + "    url('fonts/" + fontName + "-" + variant + ".svg#" + fontName + variant + "') format('svg');"
@@ -158,12 +160,13 @@
                 + "}";
         });
 
+
         return fontFace;
     }
 
     function getCSSFontFamily(fontName) {
         var font = "";
-        
+
         switch (fontName) {
             case 'Oswald':
                 font += generateFontFace({
@@ -184,38 +187,38 @@
             case 'MavenProBold':
 
                 font += generateFontFace({
-                    regular: 'maven_pro_bold'
+                    regular: 'maven_probold'
                 }, 'maven_pro_bold');
             break;
 
             case 'MavenProBlack':
 
                 font += generateFontFace({
-                    regular: 'maven_pro_black'
-                }, 'maven_pro_bold');
+                    regular: 'maven_problack'
+                }, 'maven_pro_black');
             break;
 
             case 'MavenProMedium':
 
                 font += generateFontFace({
-                    regular: 'maven_pro_medium'
-                }, 'maven_pro_bold');
+                    regular: 'maven_promedium'
+                }, 'maven_pro_medium');
             break;
 
 
             case 'MavenProRegular':
 
                 font += generateFontFace({
-                    regular: 'maven_pro_regular'
+                    regular: 'maven_proregular'
                 }, 'maven_pro_regular');
             break;
 
-            case 'Maven Pro':
+            case 'MavenPro':
 
                 font += generateFontFace({
-                    bold: 'maven_pro_bold',
-                    regular: 'maven_pro_regular',
-                    medium: 'maven_pro_medium'
+                    bold: 'maven_probold',
+                    regular: 'maven_pro',
+                    medium: 'maven_promedium'
                 }, 'maven_pro');
 
             break;
@@ -1235,11 +1238,12 @@
             
             case 'fontFamily':
 
-                property += value.family.toLowerCase();
+                property += value.family.toLowerCase().replace(' ', '_');
 
                 if ('Regular' !== value.variant) {
                     property += value.variant.replace(/\s/g, '_').toLowerCase();
                 }
+
                
             break;
 
@@ -1299,7 +1303,7 @@
             }
 
             if ('textLayer' === _this.type && 'fontFamily' === property) {
-                addFont = _this.css[property].family;
+                addFont = _this.css[property].family.replace(' ', '');
             }
 
         });
