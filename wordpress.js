@@ -28,7 +28,8 @@ function WordpressItem(wordpress, config) {
     this.wordpress = wordpress;
 
     this.properties = {
-        name: normalizedName(this.layer.name)
+        name: normalizedName(this.layer.name),
+        post_content: 'No content'
     };
 
     this.status = {
@@ -114,6 +115,44 @@ Header.prototype.created = function () {
     this.ready();
 };
 
+/**
+ * Footer constructor.
+ * @param {[type]} wordpress [description]
+ * @param {[type]} config    [description]
+ */
+function Footer(wordpress, config) {
+    var _this = this;
+
+    WordpressItem.call(this, wordpress, config);
+
+    this.items = {
+        menus: []
+    };
+
+    /*
+    this.findLayersBy('name', /^menu\./gi, this.layer.siblings).forEach(function (menu) {
+        var reference = _this.wordpress.getReferenceTo(menu);
+
+        if (undefined !== reference) {
+            _this.items.menus.push(reference);
+        }
+    });
+    */
+}
+
+Footer.prototype = Object.create(WordpressItem.prototype);
+Footer.prototype.constructor = Footer;
+
+// This is a hack. Don't do it!
+Footer.prototype.create = function () {
+    this.created();
+};
+
+Footer.prototype.created = function () {
+
+    this.status.created = true;
+    this.ready();
+};
 
 /**
  * Page constructor.
@@ -130,6 +169,8 @@ function Page(wordpress, config) {
         getCSS: this.layer.getCSS.bind(this.layer)
     };
 
+    this.properties.post_type = config.post_type;
+
     this.layer.getHTML = function () {
         return _this.layerReferences.getHTML();
     };
@@ -145,10 +186,28 @@ function Page(wordpress, config) {
 
     this.links = [];
 
-    this.findLayersBy('name', /link\./gi, this.layer.siblings).forEach(function (link) {
-        link.tag = 'a';
-        _this.links.push(link);
+    this.findLayersBy('name', /link\./gi, this.layer.siblings).forEach(function (linkLayer) {
+        linkLayer.tag = 'a';
+        _this.links.push(linkLayer);
     });
+
+    this.findLayersBy('name', /description\./gi, this.layer.siblings).forEach(function (contentLayer) {
+        _this.properties.post_content = contentLayer.text;
+    });
+
+    this.images = [];
+
+    this.findLayersBy('name', /image\./gi, this.layer.siblings).forEach(function (imageLayer) {
+        _this.images.push(imageLayer);
+    });
+
+    this.titles = [];
+
+    this.findLayersBy('name', /title\./gi, this.layer.siblings).forEach(function (titleLayer) {
+        _this.titles.push(titleLayer);
+    });
+
+    // 
 }
 
 Page.prototype = Object.create(WordpressItem.prototype);
@@ -156,7 +215,9 @@ Page.prototype.constructor = Page;
 
 Page.prototype.create = function () {
     var prop = {
-        title: this.properties.name
+        post_title: this.properties.name,
+        post_type: this.properties.post_type,
+        post_content: escape(this.properties.post_content)
     };
 
     this.parent.create.call(this, prop);
@@ -172,7 +233,40 @@ Page.prototype.created = function (props) {
         link.href = _this.properties.url;
     });
 
-    this.ready();
+    this.finishedImages = 0;
+
+    this.titles.forEach(function (title) {
+        title.text = '<?php'
+            + ' $post = get_post("' + _this.properties.post_id + '"); '
+            + ' echo $post->post_title; '
+            + ' ?>';
+    });
+    
+    this.images.forEach(function (image) {
+        _this.wordpress.sendCommand({
+            action: 'insert_image',
+            file_name: image.fileName,
+            post_id: _this.properties.post_id
+        }, function (answer) {
+            image.fileSrc = '<?php '
+                + '$attachments = get_posts( array( '
+                + ' "post_type" => "attachment", '
+                + ' "posts_per_page" => 1, '
+                + ' "post_parent" => ' + _this.properties.post_id // $post->ID, '
+                + ' ) );'
+                + ' echo wp_get_attachment_url($attachments[0]->ID); '
+                + '?>';
+
+            _this.finishedImages += 1;
+            if (_this.finishedImages === _this.images.length) {
+                _this.ready();
+            }
+        });
+    });
+
+    if (0 === this.images.length) {
+        this.ready();
+    }
 };
 
 Page.prototype.linkTo = function (linkType, itemId, linkId) {
@@ -189,7 +283,7 @@ Page.prototype.linkTo = function (linkType, itemId, linkId) {
 
     this.wordpress.sendCommand({
         action: 'link_to_' + linkType,
-        post_title: this.properties.title,
+        post_title: this.properties.name,
         link_id: linkId,
         post_id: this.properties.post_id
     }, function (answer) {
@@ -385,62 +479,6 @@ Content.prototype.created = function (props) {
     this.ready();
 };
 
-/**
- * Post constructor.
- * @param {[type]} wordpress [description]
- * @param {[type]} config    [description]
- */
-function Post(wordpress, config) {
-    var _this = this;
-
-    WordpressItem.call(this, wordpress, config);
-
-    this.layerReferences = {
-        getHTML: this.layer.getHTML.bind(this.layer),
-        getCSS: this.layer.getCSS.bind(this.layer)
-    };
-
-    this.layer.getHTML = function () {
-        var code = '';
-
-        code += '<?php echo "foobar"; ?>';
-
-        // return code; 
-        return _this.layerReferences.getHTML();
-    };
-
-    this.layer.getCSS = function () {
-        /*
-        _this.layer.cssId = 'menu-' + _this.properties.name.toLowerCase();
-
-        _this.items.pages.forEach(function (page) {
-            page.layer.cssId = 'menu-item-' + page.properties.link_id
-        });
-
-        return _this.layerReferences.getCSS(); */
-        return _this.layerReferences.getCSS();
-    };
-
-}
-
-Post.prototype = Object.create(WordpressItem.prototype);
-Post.prototype.constructor = Post;
-
-Post.prototype.create = function () {
-    var prop = {
-        title: this.properties.name
-    };
-
-    this.parent.create.call(this, prop);
-};
-
-Post.prototype.created = function (props) {
-    this.status.created = true;
-
-    this.ready();
-};
-
-
 
 /**
  * Wordpress constructor.
@@ -471,8 +509,8 @@ function Wordpress(config) {
         headers: [],
         banners: [],
         contents: [],
-        posts: [],
-        sidebars: []
+        sidebars: [],
+        footers: []
     };
 
     this.status = {
@@ -547,9 +585,19 @@ Wordpress.prototype.parseLayers = function () {
         } */
 
         _this.items.pages.push(_this.createItem('page', {
-            layer: pageLayer
+            layer: pageLayer,
+            post_type: 'page'
         }));
     });
+
+    this.findLayersBy('name', /^post\./gi).forEach(function (postLayer) {
+        _this.items.pages.push(_this.createItem('page', {
+            layer: postLayer,
+            post_type: 'post'
+        }));
+    });
+
+    // --- 
 
     this.findLayersBy('name', /^menu\./gi).forEach(function (menuLayer) {
         _this.items.menus.push(_this.createItem('menu', {
@@ -575,15 +623,15 @@ Wordpress.prototype.parseLayers = function () {
         }));
     });
 
-    this.findLayersBy('name', /^post\./gi).forEach(function (postLayer) {
-        _this.items.posts.push(_this.createItem('post', {
-            layer: postLayer
-        }));
-    });
-    
     this.findLayersBy('name', /^sidebar\./gi).forEach(function (sidebarLayer) {
         _this.items.sidebars.push(_this.createItem('sidebar', {
             layer: sidebarLayer
+        }));
+    });
+
+    this.findLayersBy('name', /^footer\./gi).forEach(function (footerLayer) {
+        _this.items.footers.push(_this.createItem('footer', {
+            layer: footerLayer
         }));
     });
 
@@ -658,12 +706,12 @@ Wordpress.prototype.createItem = function (type, config) {
             return new Content(this, config);
         break;
 
-        case 'post':
-            return new Post(this, config);
-        break;
-
         case 'sidebar':
             return new Sidebar(this, config);
+        break;
+
+        case 'footer':
+            return new Footer(this, config);
         break;
 
         default:
@@ -697,6 +745,7 @@ Wordpress.prototype.sendCommand = function (params, done) {
         args += ' ' + key + '="' + params[key] + '" ';
     });
 
+    console.log(args);
     exec('php -f ' + this.entrypoint + args, function (error, stdout, stderr) {
         console.log('Stdout' + stdout);
         var response = JSON.parse(stdout);
@@ -779,13 +828,20 @@ Wordpress.prototype.output = function () {
 
     var rawHTML = content.layer.getHTML();
 
+    var footerFile = fs.readFileSync(this.folders.wordpress + 'templates/footer.php',  'utf8');
+
+    var footer = this.items.footers[0];
+
+    var footerOutputHTML = mustache.render(footerFile, {
+        footer: footer.layer.getHTML()
+    });
+
+    fs.writeFileSync(_this.folders.wordpress + 'footer.php', footerOutputHTML);
+    fs.writeFileSync(_this.folders.wordpress + 'styles/footer.css', footer.layer.getCSS());
+
+
     var homeOutputCSS = banner.layer.getCSS();
     homeOutputCSS += content.layer.getCSS();
-
-    this.items.posts.forEach(function (post) {
-        homeOutputCSS += post.layer.getCSS();
-        rawHTML += post.layer.getHTML();
-    });
 
     // TOOD: Create a getCSS/getHTML interface on the object
     // sidebar.getCSS() / sidebar.getHTML()
