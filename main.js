@@ -246,7 +246,7 @@
                     light: 'open_sanslight',
                     lightitalic: 'open_sanslight_italic',
                     semibold: 'open_sanssemibold',
-                    regular: 'open_sansregular',
+                    regular: 'open_sans',
                     semibolditalic: 'open_sanssemibold_italic',
                 }, 'open_sans');
 
@@ -280,7 +280,7 @@
 
             default:
                 if ('' !== fontName) {
-                    console.log('The font name "' + fontName + '" is not supported.');
+                    // console.log('The font name "' + fontName + '" is not supported.');
                 }
             break;
         }
@@ -2487,6 +2487,7 @@
         var structure = new Structure({
             folders: {
                 images: path.resolve(__dirname, 'wordpress/images/') + '/',
+                // src: 'wordpress/images/'
                 src: 'wp-content/themes/generator/images/'
             },
             files: {
