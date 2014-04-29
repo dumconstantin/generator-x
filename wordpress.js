@@ -745,9 +745,9 @@ Wordpress.prototype.sendCommand = function (params, done) {
         args += ' ' + key + '="' + params[key] + '" ';
     });
 
-    console.log(args);
+    // console.log(args);
     exec('php -f ' + this.entrypoint + args, function (error, stdout, stderr) {
-        console.log('Stdout' + stdout);
+        // console.log('Stdout' + stdout);
         var response = JSON.parse(stdout);
         done(response);
     });
