@@ -424,6 +424,11 @@
             this.folder = structure.folders.images;
         }
 
+        if (true === /^link/.test(this.name)) {
+            this.tag = 'a';
+            this.href = this.name.substr(this.name.indexOf('.') + 1, this.name.length);
+        }
+
         // Create the nested Layers.
         if (undefined !== layer.layers) {
             structure.createLayers(this.siblings, layer.layers);
@@ -1397,7 +1402,7 @@
 
             break;
             case 'a':
-                html += '\n<a id="' + this.cssId + '" href="' + this.href + '">' + content + '</a>';
+                html += '\n<a id="' + this.cssId + '" href="' + this.href + '.html">' + content + '</a>';
             break;
         }
 
@@ -1461,7 +1466,7 @@
 
         this.header = '<!DOCTYPE html>' +
             '<head>' +
-            '<link rel="stylesheet" href="style.css">' +
+            '<link rel="stylesheet" href="' + this.folders.styles + this.files.cssFileName + '">' +
             '</head>' +
             '<body>';
         
@@ -1644,7 +1649,7 @@
         fs.writeFileSync(this.files.html, this.html);
         fs.writeFileSync(this.files.css, this.css);
 
-        console.log('Index.html and style.css were created.');
+        console.log('The html and css files were created.');
 
         return this;
     };
@@ -2484,17 +2489,24 @@
         // or other integration path, export images to the generator path
         // and the let integrations to get their desired images to their images
         // folder.
+        var fileName = document.file.substr(document.file.lastIndexOf('/'), document.file.length),
+            fileNameParts = fileName.split(/_|\./g),
+            projectName = fileNameParts[0],
+            pageName = fileNameParts[1];
+    
         var structure = new Structure({
             folders: {
-                images: path.resolve(__dirname, 'wordpress/images/') + '/',
-                // src: 'wordpress/images/'
-                src: 'wp-content/themes/generator/images/'
+                images: path.resolve(__dirname, 'projects/' + projectName + '/images/') + '/',
+                src: 'images/',
+                styles: 'styles/'
+                // src: 'wp-content/themes/generator/images/'
             },
             files: {
-                html: path.resolve(__dirname, 'index.html'),
-                css: path.resolve(__dirname, 'style.css'),
-                document: path.resolve(__dirname, 'document.json'),
-                structure: path.resolve(__dirname, 'structure.json')
+                html: path.resolve(__dirname, 'projects/' + projectName + '/' + pageName + '.html'),
+                css: path.resolve(__dirname, 'projects/' + projectName + '/styles/' + pageName + '.css'),
+                cssFileName: pageName + '.css',
+                document: path.resolve(__dirname, 'projects/' + projectName + '/generator/' + 'document.json'),
+                structure: path.resolve(__dirname, 'projects/' + projectName + '/generator/' + 'structure.json')
             },
             wordpress: {},
             document: document,
@@ -2509,8 +2521,8 @@
                 // .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
-                // .outputCode();
-                .outputToWordpress();
+                .outputCode();
+                //.outputToWordpress();
 
             // All work is done and can safely exit.
             // process.exit(0);
