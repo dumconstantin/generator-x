@@ -243,7 +243,6 @@
                 + "}";
         });
 
-
         return fontFace;
     }
 
@@ -1378,6 +1377,8 @@
         }
 
         content += this.text.replace(/\r/g, '<br />');
+
+        content.replace('–', '-');
 
         this.siblings.forEach(function (sibling) {
             content += sibling.getHTML();
@@ -2874,6 +2875,31 @@
     Slider.prototype = Object.create(UIComponent.prototype);
     Slider.prototype.constructor = Slider;
 
+
+    // .slider {
+        html: '<div id="slider">' +
+                    '<div id="slides">{{slider_collection}}</div>' +
+                    '<div id="bullets">{{bullet_collection}}></div>' +
+                '</div>',
+        collections: {
+            slider: {
+                html: '<div class="slide"><h2>{{title}}</h2><img src="{{image}}" /></div>',
+                content: [
+                    { title: 'foo bar', image: 'foo.png'},
+                    { title: 'baz bar', image: 'baz.png'}
+                ],
+                params: {
+                    orderBy: 'date',
+                    order: 'asc',
+                    limit: 5
+                }
+            },
+            bullet: {
+                html: '<div class="bullet"><span>{{index}}</span></div>'
+            }
+        }
+    }
+    .slides.orderBy(date).order(asc).limit(5)
 */
 
     /**
