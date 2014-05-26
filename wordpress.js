@@ -10,6 +10,49 @@ function normalizedName(name) {
 }
 
 
+/**
+ * Wordpress will require:
+ * - to know the page type: home, header, post, page, custom pages, search, single, 404
+ *
+ * - main menu
+ * -- pages
+ * -- sub-pages
+ *
+ * To be able to link between a "Page" as defined on the header 
+ *
+ * 
+ */
+
+/*
+
+function addPage(page) {
+    if (false === isAdded(page.name)) {
+        API.addPage(page.name);
+    }
+}
+
+function addImage(image) {
+    if (false === isAdded(image.name)) {
+        API.addImage(image);
+    }
+}
+
+function linkTo()
+
+Structure.pages.forEach(function (page) {
+    addPage(page);
+});
+
+Structure.images.forEach(function (image) {
+
+    addImage(image);
+
+    linkTo(image, image.page);
+
+});
+*/
+
+
 
 /**
  * WordpressItem constructor
@@ -334,7 +377,7 @@ function Menu(wordpress, config) {
         return _this.layerReferences.getCSS();
     };
 
-    _this.findLayersBy('name', /^page\./gi, this.layer.siblings).forEach(function (page) {
+    _this.findLayersBy('name', /^link\./gi, this.layer.siblings).forEach(function (page) {
         var reference = _this.wordpress.getReferenceTo(page);
 
         if (undefined !== reference) {
@@ -577,7 +620,7 @@ Wordpress.prototype.parseLayers = function () {
 
     // TODO: optimise the logic for item creation.
 
-    this.findLayersBy('name', /^page\./gi).forEach(function (pageLayer) {
+    this.findLayersBy('name', /^link\./gi).forEach(function (pageLayer) {
 
         /* TODO:
         if (true === pages.hasOwnProperty(pageLayer.name)) {
