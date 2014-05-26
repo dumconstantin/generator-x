@@ -437,6 +437,31 @@
         return this;
     };
 
+
+    /**
+     * Find a layer by its layer name.
+     * @param  {string | regexp} searchTerm The search term
+     * @return {array}            The results array
+     */
+    Layer.prototype.find = function (searchTerm) {
+        var query = new RegExp(searchTerm),
+            result = [];
+
+        function searchIn(siblings) {
+            siblings.forEach(function (sibling) {
+                if (true === query.test(sibling.name)) {
+                    result.push(sibling);
+                }
+
+                searchIn(sibling.siblings);
+            });
+        }
+
+        searchIn(this.siblings);
+
+        return result;
+    };
+
     Layer.prototype.createBoxShadow = function(shadowStyles, shadowType, elementType) {
         var property = "",
             shadow = shadowStyles[shadowType],
@@ -1383,14 +1408,13 @@
         });
 
         if (undefined !== this._get('wordpress.url')) {
-            content = '<a href="' + this._get('wordpress.url') + '">' + content + '</a>';
+            this.href = this._get('wordpress.url');
+            // content = '<a href="' + this._get('wordpress.url') + '">' + content + '</a>';
         }
-
-        src = this.fileSrc;
 
         switch (this.tag) {
             case 'img':
-                html += '\n<' + this.tag + ' id="' + this.cssId + '" src="' + src + '" />';
+                html += '\n<' + this.tag + ' id="' + this.cssId + '" src="' + this.fileSrc + '" />';
             break;
 
             case 'div':
@@ -1447,6 +1471,9 @@
         this.imagesQueue = [];
         this.generatingImage = false;
         this.currentGeneratedImage = {};
+
+
+        this.uiComponents = {};
 
         // In Photoshop layers adjust their behaviours by using global settings
         // that can be overwritten by local settings.
@@ -1551,7 +1578,7 @@
                         .replace(/^\//g, 'a')
                         .replace(/^[0-9]/g, 'a')
                         .replace(/\s/g, '-')
-                        .replace(/[@\':\.\/,+]/g, '');
+                        .replace(/[@\':\.\/,+\[\]]/g, '');
 
                 if (-1 === _this.cssIds.indexOf(layer.cssId)) {
                     // The ID is unique and can be used.
@@ -2108,6 +2135,314 @@
         return this;
     };
 
+    /**
+     * Register an UI component.
+     * Should also set listeners.
+     * @param  {[type]} uiComponent [description]
+     * @return {[type]}             [description]
+     */
+    Structure.prototype.registerUiComponent = function (uiComponent) {
+        this.uiComponents[uiComponent.name] = {
+            instances: [],
+            query: uiComponent.name.toLowerCase(),
+            obj: uiComponent
+        };
+    };
+
+    Structure.prototype.generateLogicStructure = function () {
+        var _this = this;
+
+        Object.keys(this.uiComponents).forEach(function (uiComponentName) {
+            var component = _this.uiComponents[uiComponentName];
+
+            _this.parent.find(component.query).forEach(function (layer) {
+                component.instances.push(new component.obj(layer));
+            });
+        });
+
+        // THERE IS NO NEED FOR UI COMPONENTS Augmentation!
+        // The structure of the components will be given by the 
+        // Photoshop conventions.
+
+        // Once an UI component has actioned on a layer it should create a template
+        // element for the inner component that will be used dynamically in the CMS
+        // integration. If the output is plain then the generate UIComponent will be used
+        // if it is dynamic then the CMS integration will remove all boilerplate and
+        // use the templates instead.
+
+        /*
+        var logic = {
+            header: {},
+            content: {},
+            footer: {},
+            slider: {
+                slide: {
+                    title: {
+
+                    },
+                    caption: {
+
+                    },
+
+                },
+                bullets: {
+                    bullet: {
+                        selected: {},
+
+                    }
+                }
+
+                }
+            }
+        }; */
+
+        // - slide
+        // - bullets 
+        // - thumbnails
+        // - image
+        // - caption
+        // - title
+        // - selected state
+        // - arrows
+        // - tabs
+        // -- each component can have a selected state
+        // -- for when the slide will be visible
+
+        // Convention
+        // All generator logic is delimited through a left full stop.
+        // The string to the right of the full stop will be the instruction
+        // Example:
+        // fooBar.order[asc] -> the article string is not considered, only id[10] is
+        // .article.id[10] - the article is considered and also the id
+        // 
+        // The modifiers are separated through square brackets []
+        // 
+
+        // Logic components
+        // ----------------
+        // 
+        // semantic template components
+        // - header
+        // - sidebar
+        // - footer
+        // 
+        // article
+        // - title
+        // - banner image
+        // - date 
+        // - content
+        // - comments
+        // - comment form
+        // - custom elements
+        // - summary (can either be a .content[100 characters])
+        // - related posts (also with modifiers to define how relation is made)
+        // 
+        // forms - login, comment, search, contact
+        // - select
+        // - input
+        // - date/calendar
+        // - checkbox / radio
+        // - textarea
+        // - error elements
+        // 
+        // video
+        // - central play button
+        // - video element
+        // - video element controls (pause, play, etc)
+        // 
+        // social
+        // - social links
+        // - share button
+        // 
+        // menu
+        // - links/pages
+        // - titles
+        // - category items (to get all the pages from a category)
+        // 
+        // links
+        // - page link
+        // - href link
+        // - action link / back | forward | cancel
+        // 
+        // 
+        // dynamic actions 
+        // -- Trigger an event/action that can be captured by javascript
+        // -- Expose an API for programmers to use. The JS API will be exposed
+        // -- and will trigger defined interactions from within Photoshop
+        // -- that should have a custom logic attached.
+        // -- Sliders, tabs, drop down elements should work using this system
+        // -- where they subscribe to certain events 
+        // 
+        // 
+        // breadcrumbs
+        // - breadcrumb link
+        // - breadcrumb title
+        // 
+        // category
+        // - title
+        // - parent
+        // 
+        // settings/custom fields - phone number, email, address, etc
+        // newsletter
+        // banners (slider, carousel)
+        //
+        // google map
+        // - gps coordinates
+        // 
+        // - title
+
+        // By having the slider logic defined from Photoshop the HTML construction
+        // of the slider can happen on the backend insdead of having a Slider configuring 
+        // on the fly. This is one of the most complex parts from a JS slider code to dynamically
+        // create new elements, reorder old elements and then use the dynamic elements created.
+        // By generating everything on the backend we keep the code boilerplate for all 
+        // interactions to the minimum - precompilation of interaction code.
+
+        // 
+
+        // Modifiers for logic components
+        // ---------
+        // order - string / asc | desc
+        // orderBy - string / title | date 
+        // limit - integer / 10 | 1
+        // id - integer / 10 | 2315
+        // hidden - 
+        // 
+        // example:
+        // container[articles].order[asc].orderBy[title]
+        // Are containers implicit? The parent group of a type of entities?
+        // will be a container for the first type of encountered entity. 
+        // If a group contains an article, then that group will hold articles.
+        // The linkage is implicit.
+        // Also, if a container group has modifiers that suggest the fact that
+        // there will be dynamically added entities then the entity group inside
+        // becomes a template for other entities. 
+        // OR
+        // Any entity defined in Photoshop is a template that is populated by a list
+        // of entities extracted from the CMS. If there is only one entity that will 
+        // occupy that area then the list will contain only one element.
+
+        // Create a definition list the any developer can add their custom
+        // keywords and the behaviour for that custom keyword. 
+
+        // Define what will be a template for what container similar to how
+        // Fireworks templating system was used.
+
+
+        // UI Components
+        // ---------
+        // hover
+        // - normal state
+        // - hover state
+        // - click state
+        // 
+        // slider
+        // - slide
+        // - bullets 
+        // - thumbnails
+        // - image
+        // - caption
+        // - title
+        // - selected state
+        // - arrows
+        // - tabs
+        // -- each component can have a selected state
+        // -- for when the slide will be visible
+        // 
+        // dropDown
+        // - drop down element
+        // - action element
+        // 
+        // tabs
+        // - tab
+        // - tab content
+        // - selected state
+        // 
+        // scroll bar
+        // - scroll handle
+        // - scroll container
+        // - scroll linked to another container
+        // 
+        // background - the layer will be used as a backround for the group/parent
+        // image - the layer is an image that belongs to an entity
+
+        // UI Modifiers
+        // ------------
+        // Modifiers should sit at the top level where the action is made on
+        // the sibling of a group. Ex. for a hover effect the modifiers should be on the
+        // group that contains both the hover state and the normal state
+        // ----
+        // effect - string / fade | slide
+        // duration - integer / 100 (ms)
+        // property - string / the CSS property
+        // properties - string separated by comma / the CSS properties
+        // 
+
+        // The difference between the hover and the normal state is calculated as a
+        // difference of all the CSS properties both inherited and defined. The animations
+        // will be added by default on all the differences. Custom animations will
+
+        // Modifiers for UI components 
+
+        // Permission based through hierarchies e.g. top group named [users:admin]
+        // 
+
+        // Linkages can be created thourgh using group hierarchies. Groups 
+        // do not necessarily have an impact on the design itself and thus 
+        // can be added to increase the logical relations.
+        
+        // UI components will be separate from plugins so that a Wordpress Integration
+        // will use the UI component for Sliders, etc.
+        // 
+        // There should be an API for replacing the HTML to a new HTML while ensuring
+        // the semantic structure is kept.
+        // UI components should be applied before the Integration with other frameworks.
+        // The UI components should be detected and applied automatically. All transformations
+        // should keep the initial logic structure that will be used by the Integration.
+        
+        // Incremental construction of logic VS Parsing all PSD files to generate a 
+        // single logic structure onto which the Integration is then performed.
+        // 
+        // Incremental construction seems superior because it allows the site/application
+        // to be designed/deployed incrementally and also focuses on individual units of logic
+        // that are relationed to other units of logic to create the big picture inside the 
+        // 
+    
+
+
+        // -----------
+        // Photoshop selector language 
+        // -----------
+        // Similar to CSS that will search in the layer structure and find the 
+        // layers that match the given selector.
+        // Example:
+        // var layer = getLayers('.header > .title');
+        // Now the layer can be manipulated in any way.
+        // 
+        // There will not be a getLayer method as this adds confusion on how
+        // the layer will be selected if there are multiple layers that 
+        // match that selector, instead developers will have to add
+        // getLayers('selector')[0] to get the first element from the query.
+        // 
+        // The query selector language can also use:
+        // - layer types 'text|image|container'
+        // - layer graphical properteis 'container[top=20]'
+        // - children selector to get all relevant layers for a certain layer
+        // -- '.header[children]'
+        // 
+        // -----
+        // The search can be applied also on an element:
+        // var layer = getLayers('.content')[0];
+        // layer.getLayers('.title');
+        // -----
+        // 
+        // 
+        // 
+
+
+        return this;
+    };
+
     Structure.prototype.optimiseCode = function () {
 
         function isInner(container, innerTest) {
@@ -2237,9 +2572,7 @@
         // use the before, after for styling.
         
         // Use inline-block instead of floats.
-
         // Order elements based on their left to right order.
-
 
         function orderByRow(siblings) {
 
@@ -2477,6 +2810,93 @@
         return this;
     };
 
+
+    /**
+     * UI Component constructor.
+     */
+    function UIComponent() {
+
+    }
+
+    // () vs []
+    // Functions from conventions
+
+    UIComponent.prototype.setSiblings = function (setType, elements) {
+        var _this = this;
+
+        Object.keys(elements).forEach(function (elementName) {
+
+            if (undefined === _this.siblings[elementName] && 'list' === setType) {
+                _this.siblings[elementName] = [];
+            }
+
+            _this.parent.find('.' + elementName).forEach(function (result) {
+                var item = {};
+
+                item.element = result;
+
+                elements[elementName].forEach(function (elementSelector) {
+                    item[elementSelector] = result.find('.' + elementSelector)[0];
+                });
+
+                if ('list' === setType) {
+                    _this.siblings[elementName].push(item);
+                } else {
+                    _this.siblings[elementName] = item;
+                }
+            });
+
+        });
+    };
+
+
+    /**
+     * Slider constructor.
+     * Will register a layer and will modify the layer structure to conform
+     * to that of a slider/carusel syntax while maintaining the initial logic.
+     */
+    function Slider(layer) {
+
+        this.parent = layer;
+        this.siblings = {};
+
+        this.setSiblings('elements', {
+            arrows: ['left', 'right']
+        });
+
+        this.setSiblings('list', {
+            slides: ['title', 'caption', 'image'],
+            bullets: ['title'],
+            thumbnails: ['title', 'image']
+        });
+
+        console.log(Object.keys(this.siblings.arrows.left));
+
+        return this;
+    }
+    Slider.prototype = Object.create(UIComponent.prototype);
+    Slider.prototype.constructor = Slider;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * Call GeneratorX to parse the document and output the HTML and CSS files.
      * @param  {JSON} document  The PSD exported data
@@ -2490,7 +2910,7 @@
         // and the let integrations to get their desired images to their images
         // folder.
         var fileName = document.file.substr(document.file.lastIndexOf('/'), document.file.length),
-            fileNameParts = fileName.split(/_|\./g),
+            fileNameParts = fileName.split(/_|\./gi),
             projectName = fileNameParts[0],
             pageName = fileNameParts[1];
     
@@ -2498,7 +2918,8 @@
             folders: {
                 images: path.resolve(__dirname, 'projects/' + projectName + '/images/') + '/',
                 src: 'images/',
-                styles: 'styles/'
+                // images: path.resolve(__dirname, 'wordpress/images/') + '/',
+                styles: 'styles/',
                 // src: 'wp-content/themes/generator/images/'
             },
             files: {
@@ -2513,6 +2934,8 @@
             generator: generator
         });
 
+        structure.registerUiComponent(Slider);
+
         structure.events.on('imagesFinished', function () {
 
             structure
@@ -2521,8 +2944,10 @@
                 // .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
+                .generateLogicStructure()
+                // .parseUIStructure()
                 .outputCode();
-                //.outputToWordpress();
+                // .outputToWordpress();
 
             // All work is done and can safely exit.
             // process.exit(0);
