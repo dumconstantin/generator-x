@@ -2813,7 +2813,7 @@
 
     /**
      * UI Component constructor.
-     */
+
     function UIComponent() {
 
     }
@@ -2854,7 +2854,7 @@
      * Slider constructor.
      * Will register a layer and will modify the layer structure to conform
      * to that of a slider/carusel syntax while maintaining the initial logic.
-     */
+
     function Slider(layer) {
 
         this.parent = layer;
@@ -2877,25 +2877,7 @@
     Slider.prototype = Object.create(UIComponent.prototype);
     Slider.prototype.constructor = Slider;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+*/
 
     /**
      * Call GeneratorX to parse the document and output the HTML and CSS files.
@@ -2934,7 +2916,7 @@
             generator: generator
         });
 
-        structure.registerUiComponent(Slider);
+        // structure.registerUiComponent(Slider);
 
         structure.events.on('imagesFinished', function () {
 
