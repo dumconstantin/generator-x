@@ -41,7 +41,89 @@
         events = new require('events'),
         sizeOf = require('image-size'),
         jsdom = require("jsdom"),
-        Wordpress = require('./wordpress');
+        Wordpress = require('./wordpress'),
+        fonts = {};
+
+
+    fonts = {
+        Oswald: {
+            family: {
+                regular: 'oswaldbook'
+            },
+            name: 'oswald'
+        },
+        IcoMoon: {
+            family: {
+                regular: 'icomoon'
+            },
+            name: 'icomoon'
+        },
+        MavenProBold: {
+            family: {
+                regular: 'maven_probold'
+            }, 
+            name: 'maven_pro_bold'
+        },
+        MavenProBlack: {
+            family: {
+                regular: 'maven_problack'
+            },
+            name: 'maven_pro_black'
+        },
+        MavenProMedium: {
+            family: {
+                regular: 'maven_promedium'
+            },
+            name: 'maven_pro_medium'
+        },
+        MavenProRegular: {
+            family: {
+                regular: 'maven_proregular'
+            },
+            name: 'maven_pro_regular'
+        },
+        MavenPro: {
+            family: {
+                bold: 'maven_probold',
+                regular: 'maven_pro',
+                medium: 'maven_promedium'
+            },
+            name: 'maven_pro'
+        },
+        OpenSans: {
+            family: {
+                bold: 'open_sansbold',
+                blackitalic: 'open_sansbold_italic',
+                extrabold: 'open_sansextrabold',
+                extrabolditalic: 'open_sansextrabold_italic',
+                italic: 'open_sansitalic',
+                light: 'open_sanslight',
+                lightitalic: 'open_sanslight_italic',
+                semibold: 'open_sanssemibold',
+                regular: 'open_sans',
+                semibolditalic: 'open_sanssemibold_italic',
+            },
+            name: 'open_sans'
+        },
+        Roboto: {
+            family: {
+                black: 'robotoblack',
+                blackitalic: 'robotoblack_italic',
+                bold: 'robotobold',
+                bolditalic: 'robotobold_italic',
+                italic: 'robotoitalic',
+                light: 'robotolight',
+                medium: 'robotomedium',
+                mediumitalic: 'robotomedium_italic',
+                regular: 'robotoregular',
+                thin: 'robotothin',
+                thinitalic: 'robotothin_italic'
+            },
+            name: 'roboto'
+        }
+    };
+
+
 
     //
     // Has method
@@ -144,17 +226,18 @@
     }
 
     function generateFontFace(font, fontName) {
-        var fontFace = '';
+        var fontFace = '',
+            location = '../fonts/';
 
 
         Object.keys(font).forEach(function (variant) {
             fontFace += "@font-face {"
                 + "font-family: '" + font[variant] + "'; "
-                + " src: url('fonts/" + fontName + "-" + variant + ".eot'); "
-                + " src: url('fonts/" + fontName + "-" + variant + ".eot?#iefix') format('embedded-opentype')," 
-                + "     url('fonts/" + fontName + "-" + variant + ".woff') format('woff'),"
-                + "    url('fonts/" + fontName + "-" + variant + ".ttf') format('truetype'),"
-                + "    url('fonts/" + fontName + "-" + variant + ".svg#" + fontName + variant + "') format('svg');"
+                + " src: url('" + location + fontName + "-" + variant + ".eot'); "
+                + " src: url('" + location + fontName + "-" + variant + ".eot?#iefix') format('embedded-opentype')," 
+                + "     url('" + location + fontName + "-" + variant + ".woff') format('woff'),"
+                + "    url('" + location + fontName + "-" + variant + ".ttf') format('truetype'),"
+                + "    url('" + location + fontName + "-" + variant + ".svg#" + fontName + variant + "') format('svg');"
                 + "font-weight: normal;"
                 + "font-style: normal;"
                 + "}";
@@ -167,122 +250,10 @@
     function getCSSFontFamily(fontName) {
         var font = "";
 
-        switch (fontName) {
-            case 'Oswald':
-                font += generateFontFace({
-                    regular: 'oswaldbook'
-                }, 'oswald');
-            break;
-
-            case 'IcoMoon':
-                font += generateFontFace({
-                    regular: 'icomoon'
-                }, 'icomoon');
-            break;
-
-            case 'Futura':
-
-            break;
-
-            case 'MavenProBold':
-
-                font += generateFontFace({
-                    regular: 'maven_probold'
-                }, 'maven_pro_bold');
-            break;
-
-            case 'MavenProBlack':
-
-                font += generateFontFace({
-                    regular: 'maven_problack'
-                }, 'maven_pro_black');
-            break;
-
-            case 'MavenProMedium':
-
-                font += generateFontFace({
-                    regular: 'maven_promedium'
-                }, 'maven_pro_medium');
-            break;
-
-
-            case 'MavenProRegular':
-
-                font += generateFontFace({
-                    regular: 'maven_proregular'
-                }, 'maven_pro_regular');
-            break;
-
-            case 'MavenPro':
-
-                font += generateFontFace({
-                    bold: 'maven_probold',
-                    regular: 'maven_pro',
-                    medium: 'maven_promedium'
-                }, 'maven_pro');
-
-            break;
-
-            case 'Helvetica':
-
-            break;
-
-            case 'Helvetica Neue':
-
-            break;
-
-            case 'Arial':
-
-            break;
-
-            case 'OpenSans':
-                
-                font += generateFontFace({
-                    bold: 'open_sansbold',
-                    blackitalic: 'open_sansbold_italic',
-                    extrabold: 'open_sansextrabold',
-                    extrabolditalic: 'open_sansextrabold_italic',
-                    italic: 'open_sansitalic',
-                    light: 'open_sanslight',
-                    lightitalic: 'open_sanslight_italic',
-                    semibold: 'open_sanssemibold',
-                    regular: 'open_sans',
-                    semibolditalic: 'open_sanssemibold_italic',
-                }, 'open_sans');
-
-            break;
-
-            case 'Myriad':
-
-            break;
-
-            case 'Tipogram':
-
-            break;
-
-            case 'Roboto':
-
-                font += generateFontFace({
-                    black: 'robotoblack',
-                    blackitalic: 'robotoblack_italic',
-                    bold: 'robotobold',
-                    bolditalic: 'robotobold_italic',
-                    italic: 'robotoitalic',
-                    light: 'robotolight',
-                    medium: 'robotomedium',
-                    mediumitalic: 'robotomedium_italic',
-                    regular: 'robotoregular',
-                    thin: 'robotothin',
-                    thinitalic: 'robotothin_italic'
-                }, 'roboto');
-
-            break;
-
-            default:
-                if ('' !== fontName) {
-                    // console.log('The font name "' + fontName + '" is not supported.');
-                }
-            break;
+        if (undefined !== fonts[fontName]) {
+            font += generateFontFace(fonts[fontName].family, fonts[fontName].name);
+        } else {
+            // The font does not exist in the font collection.
         }
 
         return font;
@@ -424,10 +395,12 @@
             this.folder = structure.folders.images;
         }
 
+        /*
         if (true === /^link/.test(this.name)) {
             this.tag = 'a';
             this.href = this.name.substr(this.name.indexOf('.') + 1, this.name.length);
         }
+        */
 
         // Create the nested Layers.
         if (undefined !== layer.layers) {
@@ -1342,7 +1315,10 @@
 
         // @TODO: If the font was already added do not add it again.
 
-        css += getCSSFontFamily(addFont);
+        if ('' !== addFont && -1 === this.structure.fonts.indexOf(addFont) && undefined !== fonts[addFont]) {
+            css += getCSSFontFamily(addFont);
+            this.structure.fonts.push(addFont);
+        }
 
         if ('' !== before) {
             css += '\n#' + this.cssId + '::before {\n';
@@ -1460,6 +1436,7 @@
         this.html = '';
         this.css = '';
         this.sections = {};
+        this.fonts = [];
 
         this.psdPath = this.document.file;
         this.psdName = this.psdPath.substr(this.psdPath.lastIndexOf('/') + 1, this.psdPath.length);
@@ -1671,12 +1648,32 @@
      * @return {Structure}  The Structure instance for chaining.
      */
     Structure.prototype.outputCode = function () {
-        var _this = this;
+        var _this = this,
+            fontExtensions = ['eot', 'woff', 'ttf', 'svg'];
+
+        // Move the font files
+        this.fonts.forEach(function (fontName) {
+            var font = fonts[fontName];
+
+            Object.keys(font.family).forEach(function (fontVariant) {
+                fontExtensions.forEach(function (extension) { 
+                    fs
+                        .createReadStream(
+                            path.resolve(__dirname, 'fonts/') + '/'
+                            + font.name + '-'
+                            + fontVariant
+                            + '.' + extension
+                        )
+                        .pipe(fs.createWriteStream(_this.folders.fonts + font.name + '-' + fontVariant + '.' + extension));
+                });
+            });
+        });
 
         fs.writeFileSync(this.files.html, this.html);
         fs.writeFileSync(this.files.css, this.css);
 
-        console.log('The html and css files were created.');
+        console.log(this.files.html + ' was created.');
+        console.log(this.files.css + ' was created');
 
         return this;
     };
@@ -2899,6 +2896,7 @@
         var structure = new Structure({
             folders: {
                 images: path.resolve(__dirname, 'projects/' + projectName + '/images/') + '/',
+                fonts: path.resolve(__dirname, 'projects/' + projectName + '/fonts/') + '/',
                 src: 'images/',
                 // images: path.resolve(__dirname, 'wordpress/images/') + '/',
                 styles: 'styles/',
