@@ -2891,7 +2891,7 @@
         // or other integration path, export images to the generator path
         // and the let integrations to get their desired images to their images
         // folder.
-        var fileName = document.file.substr(document.file.lastIndexOf('/'), document.file.length),
+        var fileName = document.file.lastIndexOf('/') !== -1 ? document.file.substr(document.file.lastIndexOf('/'), document.file.length) : document.file,
             fileNameParts = fileName.split(/_|\./gi),
             projectName = fileNameParts[0],
             pageName = fileNameParts[1];
