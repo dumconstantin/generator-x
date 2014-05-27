@@ -35,8 +35,9 @@
     "use strict";
 
     var path = require('path'),
-        require('./lib/Utils.js'),
         Structure = require('./lib/Structure.js');
+
+    require('./lib/Utils.js');
 
     /**
      * Call GeneratorX to parse the document and output the HTML and CSS files.
