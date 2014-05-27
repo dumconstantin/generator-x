@@ -34,7 +34,8 @@
 (function () {
     "use strict";
 
-    var path = require('path'),
+    var fs = require('fs'),
+        path = require('path'),
         Structure = require('./lib/Structure.js');
 
     require('./lib/Utils.js');
@@ -54,8 +55,17 @@
         var fileName = document.file.lastIndexOf('/') !== -1 ? document.file.substr(document.file.lastIndexOf('/'), document.file.length) : document.file,
             fileNameParts = fileName.split(/_|\./gi),
             projectName = fileNameParts[0],
-            pageName = fileNameParts[1];
-    
+            pageName = fileNameParts[1],
+            projectFolder = path.resolve(__dirname, 'projects/' + projectName);
+
+        if (false === fs.existsSync(projectFolder)) {
+            fs.mkdirSync(projectFolder);
+            fs.mkdirSync(projectFolder + '/images/');
+            fs.mkdirSync(projectFolder + '/fonts/');
+            fs.mkdirSync(projectFolder + '/generator/');
+            fs.mkdirSync(projectFolder + '/styles/');
+        }
+
         var structure = new Structure({
             folders: {
                 images: path.resolve(__dirname, 'projects/' + projectName + '/images/') + '/',
