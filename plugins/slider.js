@@ -1,4 +1,39 @@
-    /**
+
+var Plugin = require('../lib/Plugin.js');
+
+function slider(layer) {
+
+    this.layer = layer;
+
+    this.integration = {
+
+        html: ''
+
+    };
+
+    this.process = function() {
+
+//        this.use('.arrowLeft');
+//        this.use('.arrowRight');
+//        this.use('.bullet');
+//        this.use('.activeBullet');
+//        this.use('.slide');
+//        this.use('.slide[.slide] > .title');
+//        this.use('.slide[.slide] > .subtitle');
+
+        console.log(this.layer.getHTML(true))
+
+    };
+
+    return this;
+}
+
+slider.prototype = Object.create(Plugin.prototype);
+slider.prototype.constructor = Plugin;
+
+module.exports = slider
+
+/**
      * UI Component constructor.
 
     function UIComponent() {
@@ -65,28 +100,5 @@
     Slider.prototype.constructor = Slider;
 
 
-    // .slider {
-        html: '<div id="slider">' +
-                    '<div id="slides">{{slider_collection}}</div>' +
-                    '<div id="bullets">{{bullet_collection}}></div>' +
-                '</div>',
-        collections: {
-            slider: {
-                html: '<div class="slide"><h2>{{title}}</h2><img src="{{image}}" /></div>',
-                content: [
-                    { title: 'foo bar', image: 'foo.png'},
-                    { title: 'baz bar', image: 'baz.png'}
-                ],
-                params: {
-                    orderBy: 'date',
-                    order: 'asc',
-                    limit: 5
-                }
-            },
-            bullet: {
-                html: '<div class="bullet"><span>{{index}}</span></div>'
-            }
-        }
-    }
-    .slides.orderBy(date).order(asc).limit(5)
+
 */
