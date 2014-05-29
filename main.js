@@ -96,11 +96,13 @@
                 .saveStructureToJSON()
                 .refreshCode()
                 .generateLogicStructure()
+
+                .getIntegration()
                 .outputCode();
                 // .outputToWordpress();
 
             // All work is done and can safely exit.
-            // process.exit(0);
+            process.exit(0);
         });     
 
         structure
