@@ -3,17 +3,14 @@ var Plugin = require('../lib/Plugin.js');
 
 function slider(layer) {
 
+    var _this = this
     this.layer = layer;
 
-    this.integration = {
-
-        html: ''
-
-    };
+    this.integration = {}
 
     this.process = function() {
 
-//        this.use('.arrowLeft');
+        _this.use('arrowLeft');
 //        this.use('.arrowRight');
 //        this.use('.bullet');
 //        this.use('.activeBullet');
@@ -21,7 +18,7 @@ function slider(layer) {
 //        this.use('.slide[.slide] > .title');
 //        this.use('.slide[.slide] > .subtitle');
 
-        console.log(this.layer.getHTML(true))
+        //console.log(this.layer.getHTML(true))
 
     };
 
