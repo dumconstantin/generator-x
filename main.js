@@ -92,7 +92,7 @@
             structure
                 .refreshImageBoundries()
                 .refreshParentBoundries()
-                // .optimiseCode()
+                .optimiseCode()
                 .saveStructureToJSON()
                 .refreshCode()
                 .generateLogicStructure()
