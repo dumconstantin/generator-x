@@ -71,16 +71,15 @@
                 images: path.resolve(__dirname, 'projects/' + projectName + '/images/') + '/',
                 fonts: path.resolve(__dirname, 'projects/' + projectName + '/fonts/') + '/',
                 src: 'images/',
-                // images: path.resolve(__dirname, 'wordpress/images/') + '/',
-                styles: 'styles/',
-                // src: 'wp-content/themes/generator/images/'
+                styles: 'styles/'
             },
             files: {
                 html: path.resolve(__dirname, 'projects/' + projectName + '/' + pageName + '.html'),
                 css: path.resolve(__dirname, 'projects/' + projectName + '/styles/' + pageName + '.css'),
                 cssFileName: pageName + '.css',
                 document: path.resolve(__dirname, 'projects/' + projectName + '/generator/' + 'document.json'),
-                structure: path.resolve(__dirname, 'projects/' + projectName + '/generator/' + 'structure.json')
+                structure: path.resolve(__dirname, 'projects/' + projectName + '/generator/' + 'structure.json'),
+                integration: path.resolve(__dirname, 'projects/' + projectName + '/generator/' + 'integration.json')
             },
             wordpress: {},
             document: document,
