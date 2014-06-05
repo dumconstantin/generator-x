@@ -2,31 +2,12 @@ function DefaultPlugin(layer) {
     this.layer = layer;
     var _this = this;
 
-    this.elements = {
-        arrowLeft: {
-            background: 'image'
-        }
-    }
-
+    this.elements = {};
     this.integration = {
         html: '',
-        elements: {
-
-//            thumbnail: {
-//                html: '<div class="arrowLeft"><img src="#"/><span>{{ title }}</span>{% comments %}</div>',
-//                content: {
-//                    src: '',
-//                    title: ''
-//                }
-//            }
-
-        },
-        plugins: {
-        }
-
-//        content: {
-//
-//        }
+        elements: {},
+        plugins: {},
+        contents: {}
     }
 }
 
@@ -34,10 +15,12 @@ DefaultPlugin.prototype.getIntegration = function() {
 
     var _this = this;
 
-    var integration = this.layer.getIntegration(this.elements);
+    var integration = this.layer.getIntegration(this);
 
     this.integration.html = integration.html;
     this.integration.elements = integration.elements;
+
+    this.integration.contents.merge(integration.contents);
 
     Object.keys(integration.plugins).forEach(function(pluginName){
 
