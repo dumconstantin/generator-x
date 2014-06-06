@@ -101,10 +101,12 @@
                 .getIntegration()
                 .outputCode();
                 // .outputToWordpress();
+        });
 
+        structure.events.on('outputFinished', function () {
             // All work is done and can safely exit.
             process.exit(0);
-        });     
+        });
 
         structure
             .createLayers(structure.parent.siblings, structure.document.layers)
