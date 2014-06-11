@@ -20,7 +20,7 @@ function splitter(data){
 }
 
 
-function generate(ip, password) {
+function generate(ip, password, res) {
 
     process.exec('pwd', function (err, out) {
         var path = out
@@ -44,8 +44,9 @@ function generate(ip, password) {
             });
 
         child.on('message', function (message) {
-            console.log('Received message');
+            console.log('The generator has finished. Sending response to user.');
             console.log(message);
+            res.end(JSON.stringify(message));
         });
     });
 
@@ -63,7 +64,7 @@ http.createServer(function (req, res) {
 
         req.on('end', function () {
             var params = splitter(data);
-            generate(params.ip, params.pass);
+            generate(params.ip, params.pass, res);
         });
 
     } else {

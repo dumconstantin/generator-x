@@ -121,7 +121,13 @@
 
             output.on('close', function () {
                 console.log('Archive generation finished.');
-                console.log('Finished.')
+                console.log('Finished.');
+
+                process.send({
+                    projectName: projectName,
+                    fileName: pageName + '.html'
+                });
+
                 process.exit(0);
             });
 
