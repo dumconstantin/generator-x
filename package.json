@@ -7,6 +7,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "dependencies": {
+    "archiver": "0.10.x",
+    "pngjs": "0.4.x",
+    "image-size": "0.2.x"
+  },
+  "author": "Constantin Dumitrescu",
   "license": "MIT"
 }
