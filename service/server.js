@@ -5,7 +5,7 @@ var fs = require('fs'),
     process = require('child_process');
 
 function splitter(data){
-    var regExp = /name=\"([a-z]+)\"([a-z0-9]+)/gi,
+    var regExp = /name=\"([a-z]+)\"([a-z0-9\.]+)/gi,
         params,
         hash = {};
     
