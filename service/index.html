@@ -4,6 +4,8 @@
     <input type="password" id="pass" name="pass" placeholder="Password" />
     <button id="generate">Generate</button>
 
+    <div id="placeholder"></div>
+
     <script>
         var httpRequest = new XMLHttpRequest();
 
@@ -20,12 +22,23 @@
             httpRequest.open('POST', '/generate', true);
             httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
             httpRequest.send(data);
+
+            placeholder.innerHTML = 'Please wait...';
+        }
+
+        function handleResponse(response) {
+            var url = 'http://generator.dev.brandup.ro/'
+                    + 'generator/test/plugins/generatorx/projects/'
+                    + response.projectName + '/' + response.fileName;
+
+            placeholder.innerHTML = 'Generated link <a href="' + url + '">here</a>';
         }
 
         function receiveResponse() {
+
             if (httpRequest.readyState === 4) {
                 if (httpRequest.status === 200) {
-                    console.log(httpRequest.responseText);
+                    handleResponse(JSON.parse(httpRequest.responseText));
                 } else {
                     alert('There was a problem with the request.');
                 }
