@@ -28,7 +28,7 @@ function generate(ip, password) {
             .replace(/[\n\s\r]/g, '');
 
         var child = process.fork('app.js' , 
-            ['-f', 'test/plugins', '-h', ip, '-p', password], 
+            ['-f', 'test/plugins', '-h', ip, '-P', password, '-p', 49494], 
             {
                 cwd: path
             }, 
