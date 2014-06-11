@@ -29,9 +29,11 @@
         function handleResponse(response) {
             var url = 'http://generator.dev.brandup.ro/'
                     + 'generator/test/plugins/generatorx/projects/'
-                    + response.projectName + '/' + response.fileName;
+                    + response.projectName + '/',
+                file = url + response.fileName,
+                archive = url + response.archive;
 
-            placeholder.innerHTML = 'Generated link <a href="' + url + '">here</a>';
+            placeholder.innerHTML = 'View the generated <a href="' + url + '">page</a> or download the <a href="' + archive + '">zip</a>.';
         }
 
         function receiveResponse() {
