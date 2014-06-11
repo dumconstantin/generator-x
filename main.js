@@ -36,7 +36,8 @@
 
     var fs = require('fs'),
         path = require('path'),
-        Structure = require('./lib/Structure.js');
+        Structure = require('./lib/Structure.js'),
+        archiver = require('archiver');
 
     require('./lib/Utils.js');
 
@@ -71,7 +72,8 @@
                 images: path.resolve(__dirname, 'projects/' + projectName + '/images/') + '/',
                 fonts: path.resolve(__dirname, 'projects/' + projectName + '/fonts/') + '/',
                 src: 'images/',
-                styles: 'styles/'
+                styles: 'styles/',
+                fontSource: path.resolve(__dirname, 'fonts/')
             },
             files: {
                 html: path.resolve(__dirname, 'projects/' + projectName + '/' + pageName + '.html'),
@@ -102,9 +104,29 @@
                 // .outputToWordpress();
         });
 
-        structure.events.on('outputFinished', function () {
-            // All work is done and can safely exit.
-            process.exit(0);
+        structure.events.on('structureFinished', function () {
+            var archive = archiver('zip'),
+                output;
+
+            archive.on('error', function(err){
+                throw err;
+            });
+
+
+            archive.bulk([
+                { src: [projectFolder + '/**'], dest: projectName}
+            ]);
+
+            output = fs.createWriteStream(projectFolder + '/' + projectName + '_generated.zip');
+
+            output.on('close', function () {
+                console.log('Archive generation finished.');
+                console.log('Finished.')
+                process.exit(0);
+            });
+
+            archive.pipe(output);
+            archive.finalize();
         });
 
         structure
