@@ -53,7 +53,7 @@
         // or other integration path, export images to the generator path
         // and the let integrations to get their desired images to their images
         // folder.
-        var fileName = document.file.lastIndexOf('/') !== -1 ? document.file.substr(document.file.lastIndexOf('/'), document.file.length) : document.file,
+        var fileName = document.file.lastIndexOf('/') !== -1 ? document.file.substr(document.file.lastIndexOf('/') + 1, document.file.length) : document.file,
             fileNameParts = fileName.split(/_|\./gi),
             projectName = fileNameParts[0],
             pageName = fileNameParts[1],
@@ -112,7 +112,6 @@
                 throw err;
             });
 
-
             archive.bulk([
                 { src: [projectFolder + '/**'], dest: projectName}
             ]);
@@ -125,7 +124,8 @@
 
                 process.send({
                     projectName: projectName,
-                    fileName: pageName + '.html'
+                    fileName: pageName + '.html',
+                    archive: projectName + '_generated.zip'
                 });
 
                 process.exit(0);
