@@ -2,8 +2,7 @@ var http = require('http');
 var fs = require('fs'),
     index = fs.readFileSync('index.html'),
     url = require("url"),
-    process = require('child_process'),
-    exec = require('exec');
+    process = require('child_process');
 
 function splitter(data){
     var regExp = /name=\"([a-z]+)\"([a-z0-9]+)/gi,
@@ -44,19 +43,6 @@ function generate(ip, password) {
         console.log(message);
     });
 
-    /*
-    exec(['/usr/local/bin/node server.js'], {
-      //  cwd: '/users/constantin/Sites/generatorx'
-    }, function(err, out, code) {
-        if (err instanceof Error) {
-            console.log(err);
-        }
-
-        console.log(err);
-        console.log(out);
-        console.log(code);
-    });
-    */
 }
 
 http.createServer(function (req, res) {
