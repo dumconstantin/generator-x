@@ -22,25 +22,31 @@ function splitter(data){
 
 function generate(ip, password) {
 
-    var child = process.fork('app.js' , 
-        ['-f', 'test/plugins', '-h', ip, '-p', password], 
-        {
-            cwd: '/users/constantin/Sites/generatorx/'
-        }, 
-        function(err, out, code) {
+    process.exec('pwd', function (err, out) {
+        var path = out
+            .replace('test/plugins/generatorx/service', '')
+            .replace(/[\n\s\r]/g, '');
 
-            if (err instanceof Error) {
+        var child = process.fork('app.js' , 
+            ['-f', 'test/plugins', '-h', ip, '-p', password], 
+            {
+                cwd: path
+            }, 
+            function(err, out, code) {
+
+                if (err instanceof Error) {
+                    console.log(err);
+                }
+
                 console.log(err);
-            }
+                console.log(out);
+                console.log(code);
+            });
 
-            console.log(err);
-            console.log(out);
-            console.log(code);
+        child.on('message', function (message) {
+            console.log('Received message');
+            console.log(message);
         });
-
-    child.on('message', function (message) {
-        console.log('Received message');
-        console.log(message);
     });
 
 }
