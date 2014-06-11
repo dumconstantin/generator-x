@@ -1,0 +1,36 @@
+<body>
+
+    <input type="text" id="ip" name="ip" placeholder="IP address" />
+    <input type="password" id="pass" name="pass" placeholder="Password" />
+    <button id="generate">Generate</button>
+
+    <script>
+        var httpRequest = new XMLHttpRequest();
+
+        generate.addEventListener('click', sendRequest);
+
+        function sendRequest() {
+            var data = new FormData();
+
+            data.append('ip', ip.value);
+            data.append('pass', pass.value);
+
+            console.log('sending request');
+            httpRequest.onload = receiveResponse;
+            httpRequest.open('POST', '/generate', true);
+            httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            httpRequest.send(data);
+        }
+
+        function receiveResponse() {
+            if (httpRequest.readyState === 4) {
+                if (httpRequest.status === 200) {
+                    console.log(httpRequest.responseText);
+                } else {
+                    alert('There was a problem with the request.');
+                }
+            }
+        }
+    </script>
+
+</body>
