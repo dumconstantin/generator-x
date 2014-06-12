@@ -125,11 +125,13 @@
                 console.log('Archive generation finished.');
                 console.log('Finished.');
 
-                process.send({
-                    projectName: projectName,
-                    fileName: pageName + '.html',
-                    archive: projectName + '_generated.zip'
-                });
+                if (undefined !== process.send) {
+                    process.send({
+                        projectName: projectName,
+                        fileName: pageName + '.html',
+                        archive: projectName + '_generated.zip'
+                    });
+                }
 
                 process.exit(0);
             });
