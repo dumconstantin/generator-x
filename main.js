@@ -49,6 +49,9 @@
      */
     function runGenerator(document, generator) {
 
+        // Slash normalization for windows systems
+        document.file = document.file.replace(/\\/g, '/');
+
         // TODO: Create image movers. Instead of exporting images to the wordpress
         // or other integration path, export images to the generator path
         // and the let integrations to get their desired images to their images
