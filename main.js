@@ -59,7 +59,7 @@
         var fileName = document.file.lastIndexOf('/') !== -1 ? document.file.substr(document.file.lastIndexOf('/') + 1, document.file.length) : document.file,
             fileNameParts = fileName.split(/_|\./gi),
             projectName = fileNameParts[0],
-            pageName = fileNameParts[1],
+            pageName = undefined !== fileNameParts[1] ? fileNameParts[1] : 'index',
             projectFolder = path.resolve(__dirname, 'projects/' + projectName);
 
         if (false === fs.existsSync(projectFolder)) {
