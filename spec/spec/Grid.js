@@ -24,10 +24,10 @@ describe('Grid', function() {
                     height: cellHeight
                 });
 
-                leftMargin = 60;
+                leftMargin = 50;
             }
 
-            topMargin = 20;
+            topMargin = 10;
         }
 
         return elements;
@@ -186,8 +186,162 @@ describe('Grid', function() {
             expect(row.length).toBe(3);
         });
 
+        it('should find elements that are stacked through hierarchical positioning', function () {
+            var elements = createGrid(1, 4),
+                row;
+
+            elements[0].top -= elements[0].height / 2;
+            elements[2].top += elements[2].height / 2;
+            elements[3].top += elements[3].height;
+            elements[3].left = elements[0].left;
+
+            row = detectRow(augmentElements(elements));
+
+            expect(row.length).toBe(4);
+        });
+
+
     });
 
 
+    describe('isValidBoundries', function () {
 
+        it('should validate an element with top, left, width, height', function () {
+            var element = {
+                top: 100,
+                left: 100,
+                width: 200,
+                height: 200
+            };
+
+            expect(isValidBoundries(element)).toBe(true);
+        });
+
+        it('should validate an element with bottom, right, width, height', function () {
+            var element = {
+                bottom: 200,
+                right: 200,
+                width: 200,
+                height: 200
+            };
+
+            expect(isValidBoundries(element)).toBe(true);
+        });
+
+        it('should validate an element with top, right, bottom, left', function () {
+            var element = {
+                top: 100,
+                left: 100,
+                bottom: 200,
+                right: 200
+            };
+
+            expect(isValidBoundries(element)).toBe(true);
+        });
+
+        it('should not validate an element with without a vertical conditional', function () {
+            var element = {
+                top: 100,
+                left: 100,
+                right: 200
+            };
+
+            expect(isValidBoundries(element)).toBe(false);
+        });
+
+        it('should not validate an element with without a horizontal conditional', function () {
+            var element = {
+                top: 100,
+                height: 500,
+                right: 200
+            };
+
+            expect(isValidBoundries(element)).toBe(false);
+        });
+
+    });
+
+    /*
+    describe('getBoundries', function () {
+
+        it('should find the boundries based on top, left, right, bottom', function() {
+            var elements = [{
+                    top: 100,
+                    left: 100,
+                    right: 200,
+                    bottom: 400
+                }],
+                boundries = getBoundries(elements);
+
+            expect(boundries.left).toBe(100);
+            expect(boundries.right).toBe(200);
+            expect(boundries.top).toBe(100);
+            expect(boundries.bottom).toBe(400);
+            expect(boundries.width).toBe(100);
+            expect(boundries.height).toBe(300);
+        });
+        
+        it('should find the boundries based on top, left, width, height', function() {
+            var elements = [{
+                    top: 100,
+                    left: 100,
+                    width: 200,
+                }],
+                boundries = getBoundries(elements);
+
+            expect(boundries.left).toBe(100);
+            expect(boundries.right).toBe(300);
+            expect(boundries.top).toBe(100);
+            expect(boundries.bottom).toBe(400);
+            expect(boundries.width).toBe(200);
+            expect(boundries.height).toBe(300);
+        });
+
+    });
+
+
+    describe('detectComposedElements', function () {
+
+        /*
+        it('should group the first 3 elements as a composed element', function () {
+            var elements = createGrid(1, 4),
+                result;
+
+            elements[1].left -= elements[1].left / 2 + 1;
+            elements[2].left -= elements[2].left / 2 + 2;
+
+            result = detectComposedElements(augmentElements(elements));
+
+            expect(result.length).toBe(2);
+        });
+
+        it('should group the last 3 elements as a composed element', function () {
+            var elements = createGrid(1, 4),
+                result;
+
+            elements[1].left += elements[1].width * 2 - 5;
+            elements[2].left += elements[2].width - 5;
+
+            showGrid(elements);
+
+            result = detectComposedElements(augmentElements(elements));
+
+            console.log(result);
+            expect(result.length).toBe(2);
+        }); 
+
+        it('should not find any composed elements', function () {
+            var elements = createGrid(1, 4),
+                result;
+
+            elements[1].left -= elements[1].left / 2 - 1;
+            elements[2].left -= elements[2].left / 2 - 2;
+
+            result = detectComposedElements(augmentElements(elements));
+
+            expect(result.length).toBe(4);
+        });
+   
+    });
+     */
 });
