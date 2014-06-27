@@ -66,11 +66,21 @@
         var elem = document.createElement('div');
 
         Object.keys(element).forEach(function (prop) {
-            elem.style[prop] = element[prop] + 'px';
+            
+            if ('number' === typeof element[prop]) {
+              elem.style[prop] = element[prop] + 'px';
+            } else {
+              elem.style[prop] = element[prop];
+              console.log(elem.style[prop] );
+            }
+            
         });
 
         elem.style.position = 'absolute';
-        elem.style.background = '#660099';
+        
+        if ('' === elem.style.background) {
+          elem.style.background = '#660099';
+        }
 
         parent.appendChild(elem);
     });
