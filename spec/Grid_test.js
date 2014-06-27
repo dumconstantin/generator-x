@@ -315,7 +315,6 @@ describe('Grid', function() {
 
             result = detectComposedElements(augmentElements(elements));
 
-            console.log(result);
             expect(result.length).toBe(2);
         }); 
 
@@ -333,16 +332,24 @@ describe('Grid', function() {
 
         it('should group the elements of a composed element as children', function () {
             var elements = createGrid(1, 5),
+                children,
                 result;
 
-            elements[2].left -= elements[2].left / 2 - 5;
-            elements[3].left -= elements[3].left / 2 + 2;
-
-            showGrid(elements);
+            elements[2].left -= elements[2].left / 3;
+            elements[3].left -= elements[3].left / 2;
 
             result = detectComposedElements(augmentElements(elements));
 
+            result.every(function (element) {
+                if (undefined !== element.children) {
+                    children = element.children;
+                    return false;
+                } else {
+                    return true;
+                }
+            });
 
+            expect(children.length).toBe(3);
         });
 
     });
