@@ -261,7 +261,7 @@ describe('Grid', function() {
 
     });
 
-    /*
+
     describe('getBoundries', function () {
 
         it('should find the boundries based on top, left, right, bottom', function() {
@@ -270,36 +270,27 @@ describe('Grid', function() {
                     left: 100,
                     right: 200,
                     bottom: 400
-                }],
-                boundries = getBoundries(elements);
+                }, {
+                    top: 50,
+                    left: 50,
+                    right: 150,
+                    bottom: 500
 
-            expect(boundries.left).toBe(100);
+                }],
+                boundries = getBoundries(augmentElements(elements));
+
+            expect(boundries.left).toBe(50);
             expect(boundries.right).toBe(200);
-            expect(boundries.top).toBe(100);
-            expect(boundries.bottom).toBe(400);
-            expect(boundries.width).toBe(100);
-            expect(boundries.height).toBe(300);
+            expect(boundries.top).toBe(50);
+            expect(boundries.bottom).toBe(500);
+            expect(boundries.width).toBe(150);
+            expect(boundries.height).toBe(450);
         });
         
-        it('should find the boundries based on top, left, width, height', function() {
-            var elements = [{
-                    top: 100,
-                    left: 100,
-                    width: 200,
-                }],
-                boundries = getBoundries(elements);
-
-            expect(boundries.left).toBe(100);
-            expect(boundries.right).toBe(300);
-            expect(boundries.top).toBe(100);
-            expect(boundries.bottom).toBe(400);
-            expect(boundries.width).toBe(200);
-            expect(boundries.height).toBe(300);
-        });
-
     });
 
 
+    /*
     describe('detectComposedElements', function () {
 
         /*
