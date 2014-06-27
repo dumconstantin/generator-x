@@ -11,12 +11,87 @@
   <script type="text/javascript" src="jasmine/jasmine-html.js"></script>
   <script type="text/javascript" src="jasmine/boot.js"></script>
 
-  <!-- include source files here... -->
-  <script type="text/javascript" src="lib/Grid.js"></script>
+
+  <!-- TEST HELPERS -->
+  <script>
+  function createGrid(rows, cols) {
+    var elements = [],
+        cellWidth = 50,
+        cellHeight = 50,
+        leftMargin = 0,
+        topMargin = 0,
+        top, 
+        left;
+
+    for (i = 0; i < rows; i += 1) {
+
+        leftMargin = 0;
+
+        for (j = 0; j < cols; j += 1) {
+            top = i * cellHeight + i * topMargin,
+            left = j * cellWidth + j * leftMargin,
+
+            elements.push({
+                top: top,
+                left: left,
+                width: cellWidth,
+                height: cellHeight
+            });
+
+            leftMargin = 50;
+        }
+
+        topMargin = 10;
+    }
+
+    return elements;
+  }
+
+  function showGrid(elements) {
+    var parent = document.createElement('div'),
+        styles = {
+            position: 'absolute',
+            right: '10px',
+            top: '10px',
+            background: '#444',
+            width: '500px',
+            height: '500px'
+        };
+
+    Object.keys(styles).forEach(function (propName) {
+        parent.style[propName] = styles[propName];
+    });
+
+    elements.forEach(function (element) {
+        var elem = document.createElement('div');
+
+        Object.keys(element).forEach(function (prop) {
+            elem.style[prop] = element[prop] + 'px';
+        });
+
+        elem.style.position = 'absolute';
+        elem.style.background = '#660099';
+
+        parent.appendChild(elem);
+    });
+
+    document.querySelector('body').appendChild(parent);
+  }
+  </script>
+
+  <script type="text/javascript" src="lib/Relative.js"></script>
 
 
   <!-- include spec files here... -->
-  <script type="text/javascript" src="spec/Grid_test.js"></script>
+  <script type="text/javascript" src="spec/Relative/augmentElements.js"></script>
+  <script type="text/javascript" src="spec/Relative/detectComposedElements.js"></script>
+  <script type="text/javascript" src="spec/Relative/detectIntersectionElements.js"></script>
+  <script type="text/javascript" src="spec/Relative/detectRow.js"></script>
+  <script type="text/javascript" src="spec/Relative/getBoundries.js"></script>
+  <script type="text/javascript" src="spec/Relative/getComposedElement.js"></script>
+  <script type="text/javascript" src="spec/Relative/getTopElementIndex.js"></script>
+  <script type="text/javascript" src="spec/Relative/isValidBoundries.js"></script>
+  <script type="text/javascript" src="spec/Relative/getRows.js"></script>
 
 </head>
 
