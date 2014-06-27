@@ -36,8 +36,8 @@ describe('Grid', function() {
     function showGrid(elements) {
         var parent = document.createElement('div'),
             styles = {
-                position: 'relative',
-                left: '10px',
+                position: 'absolute',
+                right: '10px',
                 top: '10px',
                 background: '#444',
                 width: '500px',
@@ -312,7 +312,7 @@ describe('Grid', function() {
         var elements = [];
 
         beforeEach(function () {
-            elements = [{
+            elements = augmentElements([{
                 id: 1,
                 top: -10,
                 left: -10,
@@ -330,11 +330,11 @@ describe('Grid', function() {
                 left: 100,
                 right: 250,
                 bottom: 500
-            }];
+            }]);
         });
 
         it('should get the boundries for the parent element correct', function () {
-            var result = getComposedElement(augmentElements(elements));
+            var result = getComposedElement(elements);
 
             expect(result.width).toBe(260);
             expect(result.height).toBe(510);
@@ -345,12 +345,12 @@ describe('Grid', function() {
         });
 
         it('should get the correct number of children', function () {
-            var result = getComposedElement(augmentElements(elements));
+            var result = getComposedElement(elements);
             expect(result.children.length).toBe(3);
         });
 
         it('should set the correct positioning for the child elements', function () {
-            var result = getComposedElement(augmentElements(elements));
+            var result = getComposedElement(elements);
         
             result.children.forEach(function (child) {
                 var initial;
@@ -380,6 +380,28 @@ describe('Grid', function() {
 
         });
 
+        it('should move the intersection element as a direct child to the composed element and adjust its boundries', function () {
+            var row,
+                intersectionElement,
+                result;
+
+
+            row = detectRow(elements);
+            row = detectIntersectionElements(row, elements);
+
+            getComposedElement(row.children);
+
+            row.children.forEach(function (child) {
+                if (3 === child.id) {
+                    intersectionElement = child;
+                }
+            });
+
+            expect(intersectionElement).toBeDefined();
+            expect(intersectionElement.top).toBe(60);
+            expect(intersectionElement.left).toBe(110);
+        });
+
     });
      
     describe('detectIntersectionElements', function () {
@@ -399,7 +421,6 @@ describe('Grid', function() {
 
             elements = augmentElements(elements);
 
-            showGrid(elements);
             row = detectRow(elements);
             row = detectIntersectionElements(row, elements);
 
@@ -480,6 +501,33 @@ describe('Grid', function() {
             });
 
             expect(children.length).toBe(3);
+        });
+
+        it('should add the elements contained by intersection elements to the children list of the composed element', function () {
+            var elements = createGrid(1, 4),
+                element,
+                result,
+                row;
+
+            elements[1].left -= elements[1].left / 2 + 1;
+
+            elements[2].top -= 10;
+
+            elements.push({
+                top: 20,
+                left: 220,
+                width: 50,
+                height: 100
+            });
+
+            elements = augmentElements(elements);
+
+            row = detectRow(elements);
+            row = detectIntersectionElements(row, elements);
+            row.children = detectComposedElements(row.children);
+
+            expect(row.children.length).toBe(3);
+
         });
 
     });
