@@ -290,10 +290,9 @@ describe('Grid', function() {
     });
 
 
-    /*
     describe('detectComposedElements', function () {
 
-        /*
+
         it('should group the first 3 elements as a composed element', function () {
             var elements = createGrid(1, 4),
                 result;
@@ -306,14 +305,13 @@ describe('Grid', function() {
             expect(result.length).toBe(2);
         });
 
+    
         it('should group the last 3 elements as a composed element', function () {
             var elements = createGrid(1, 4),
                 result;
 
-            elements[1].left += elements[1].width * 2 - 5;
-            elements[2].left += elements[2].width - 5;
-
-            showGrid(elements);
+            elements[1].left += elements[1].width * 2 + 2;
+            elements[2].left += elements[2].width + 2;
 
             result = detectComposedElements(augmentElements(elements));
 
@@ -332,7 +330,21 @@ describe('Grid', function() {
 
             expect(result.length).toBe(4);
         });
-   
+
+        it('should group the elements of a composed element as children', function () {
+            var elements = createGrid(1, 5),
+                result;
+
+            elements[2].left -= elements[2].left / 2 - 5;
+            elements[3].left -= elements[3].left / 2 + 2;
+
+            showGrid(elements);
+
+            result = detectComposedElements(augmentElements(elements));
+
+
+        });
+
     });
-     */
+     
 });
