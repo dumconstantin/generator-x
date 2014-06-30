@@ -50,7 +50,7 @@ describe('detectComposedElements', function () {
         result = detectComposedElements(augmentElements(elements));
 
         result.every(function (element) {
-            if (undefined !== element.children) {
+            if (0 !== element.children.length) {
                 children = element.children;
                 return false;
             } else {
