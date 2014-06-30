@@ -4,7 +4,7 @@ describe('getRows', function () {
         var structure = [];
 
         rows.forEach(function (row, index) {
-            if (undefined !== row.children) {
+            if (0 !== row.children.length) {
                 structure.push(getStructure(row.children)); 
             } else {
                 structure.push(row.id);
