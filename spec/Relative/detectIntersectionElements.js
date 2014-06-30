@@ -13,9 +13,9 @@ describe('detectIntersectionElements', function () {
             height: 400
         });
 
-        augmentElements(elements);
+        elements = augmentElements(elements);
+        row = detectRow(getBoundries(elements), elements);
 
-        row = detectRow(elements);
         row = detectIntersectionElements(row, elements);
 
         row.children.every(function (child) {
