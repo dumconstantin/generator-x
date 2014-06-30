@@ -78,9 +78,9 @@ describe('detectComposedElements', function () {
             height: 100
         });
 
-        augmentElements(elements);
+        elements = augmentElements(elements);
+        row = detectRow(getBoundries(elements), elements);
 
-        row = detectRow(elements);
         row = detectIntersectionElements(row, elements);
         row.children = detectComposedElements(row.children);
 

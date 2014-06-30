@@ -76,8 +76,7 @@ describe('getComposedElement', function () {
             intersectionElement,
             result;
 
-
-        row = detectRow(elements);
+        row = detectRow(getBoundries(elements), elements);
         row = detectIntersectionElements(row, elements);
 
         getComposedElement(row.children);
