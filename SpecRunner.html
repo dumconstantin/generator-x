@@ -40,24 +40,64 @@
       return layer;
   }
 
+
+
+
+  function CellModifier() {
+    this.modifiers = {};
+  }
+
+  CellModifier.prototype.set = function (row, col, value) {
+
+    if (undefined === this.modifiers[row]) {
+      this.modifiers[row] = {};
+    }
+
+    this.modifiers[row][col] = value;
+
+    return this;
+  };
+
+  CellModifier.prototype.get = function () {
+    return this.modifiers;
+  };
+  
+  CellModifier.prototype.reset = function () {
+    this.modifiers = {};
+
+    return this;
+  };
+
+
+
   function addSiblings(layer, nodes) {
 
       nodes.forEach(function (node) {
-          layer.siblings.push(createLayer(node));
+        var newLayer = createLayer(node);
+        newLayer.parent = layer;
+      
+        layer.siblings.push(newLayer);
+      
       });
 
   }
 
-  function createNodes(config) {
+  function createNodes(config, modifiers) {
     var layers = [],
-        top, 
+        top,
+        cellDefaults,
+        layer,
         left;
 
     if (undefined === config.cell) {
       config.cell = {};
     }
 
-    var cellDefaults = {
+    if (undefined === modifiers) {
+      modifiers = {};
+    }
+
+    cellDefaults = {
       top: 10,
       left: 10,
       width: 50,
@@ -82,10 +122,10 @@
 
         for (j = 0; j < config.cols; j += 1) {
 
-            top = i * config.cell.height + i * (0 < i ? config.cell.top : 0) + config.offset.top,
-            left = j * config.cell.width + j * (0 < j ? config.cell.left : 0) + config.offset.left,
+            top = i * config.cell.height + i * (0 < i ? config.cell.top : 0) + config.offset.top;
+            left = j * config.cell.width + j * (0 < j ? config.cell.left : 0) + config.offset.left;
 
-            layers.push({
+            layer = {
                 top: top,
                 left: left,
                 right: left + config.cell.width,
@@ -94,7 +134,45 @@
                 height: config.cell.height,
                 background: config.cell.background,
                 children: []
-            });
+            };
+
+            if (modifiers.hasOwnProperty(i) && modifiers[i].hasOwnProperty(j)) {
+              if (undefined !== modifiers[i][j]) {
+                Object.keys(modifiers[i][j]).forEach(function (prop) {
+                  layer[prop] = modifiers[i][j][prop];
+                });
+
+                if (undefined === modifiers[i][j].bottom) {
+                  layer.bottom = layer.top + layer.height;
+                } else {
+                  layer.top = layer.bottom - layer.height;
+                }
+
+                if (undefined === modifiers[i][j].left) {
+                  layer.left = layer.right - layer.width;
+                } else {
+                  layer.right = layer.left + layer.width;
+                }
+
+                if (undefined === modifiers[i][j].width) {
+                  layer.width = layer.right - layer.left;
+                }
+
+                if (undefined === modifiers[i][j].height) {
+                  layer.height = layer.bottom - layer.top;
+                }
+
+
+              } else {
+                layer = undefined;
+              }
+            }
+
+            if (undefined !== layer) {
+              layers.push(layer);
+            }
+
+
         }
     }
 
@@ -136,7 +214,6 @@
   </script>
 
   <script type="text/javascript" src="lib/Relative.js"></script>
-
 
   <script type="text/javascript" src="spec/Relative/index.js"></script>
 
