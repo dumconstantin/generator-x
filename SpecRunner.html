@@ -14,94 +14,150 @@
 
   <!-- TEST HELPERS -->
   <script>
-  function createGrid(rows, cols) {
-    var elements = [],
-        cellWidth = 50,
-        cellHeight = 50,
-        leftMargin = 0,
-        topMargin = 0,
+
+  var getId = (function () {
+      var inc = 0;
+      return function () {
+          inc += 1;
+          return inc;
+      };
+  }());
+  
+  function createLayer(node) {
+      var layer;
+
+      layer = {
+          layerId: getId(),
+          id: getId(),
+          css: node,
+          siblings: []
+      };
+
+      addSiblings(layer, node.children);
+
+      delete node.children;
+
+      return layer;
+  }
+
+  function addSiblings(layer, nodes) {
+
+      nodes.forEach(function (node) {
+          layer.siblings.push(createLayer(node));
+      });
+
+  }
+
+  function createNodes(config) {
+    var layers = [],
         top, 
         left;
 
-    for (i = 0; i < rows; i += 1) {
-
-        leftMargin = 0;
-
-        for (j = 0; j < cols; j += 1) {
-            top = i * cellHeight + i * topMargin,
-            left = j * cellWidth + j * leftMargin,
-
-            elements.push({
-                top: top,
-                left: left,
-                width: cellWidth,
-                height: cellHeight
-            });
-
-            leftMargin = 50;
-        }
-
-        topMargin = 10;
+    if (undefined === config.cell) {
+      config.cell = {};
     }
 
-    return elements;
-  }
+    var cellDefaults = {
+      top: 10,
+      left: 10,
+      width: 50,
+      height: 50,
+      background: '#444'
+    };
 
-  function showGrid(elements) {
-    var parent = document.createElement('div'),
-        styles = {
-            position: 'absolute',
-            right: '10px',
-            top: '10px',
-            background: '#444',
-            width: '500px',
-            height: '500px'
-        };
-
-    Object.keys(styles).forEach(function (propName) {
-        parent.style[propName] = styles[propName];
+    Object.keys(cellDefaults).forEach(function (prop) {
+      if (undefined === config.cell[prop]) {
+        config.cell[prop] = cellDefaults[prop];
+      }
     });
 
-    elements.forEach(function (element) {
-        var elem = document.createElement('div');
+    if (undefined === config.offset) {
+      config.offset = {
+        top: 0,
+        left: 0
+      };
+    }
 
-        Object.keys(element).forEach(function (prop) {
-            
-            if ('number' === typeof element[prop]) {
-              elem.style[prop] = element[prop] + 'px';
-            } else {
-              elem.style[prop] = element[prop];
-            }
-            
-        });
+    for (i = 0; i < config.rows; i += 1) {
 
-        elem.style.position = 'absolute';
-        
-        if ('' === elem.style.background) {
-          elem.style.background = '#660099';
+        for (j = 0; j < config.cols; j += 1) {
+
+            top = i * config.cell.height + i * (0 < i ? config.cell.top : 0) + config.offset.top,
+            left = j * config.cell.width + j * (0 < j ? config.cell.left : 0) + config.offset.left,
+
+            layers.push({
+                top: top,
+                left: left,
+                right: left + config.cell.width,
+                bottom: top + config.cell.height,
+                width: config.cell.width,
+                height: config.cell.height,
+                background: config.cell.background,
+                children: []
+            });
+        }
+    }
+
+    return layers;
+  }
+
+  function showTree(tree, parent) {
+    var node = document.createElement('div');
+
+    tree.css.position = 'absolute';
+
+    if ('' === tree.css.background) {
+        tree.css.background = '#660099';
+    }
+
+    Object.keys(tree.css).forEach(function (prop) {
+        if ('number' === typeof tree.css[prop]) {
+          node.style[prop] = tree.css[prop] + 'px';
+        } else {
+          node.style[prop] = tree.css[prop];
         }
 
-        parent.appendChild(elem);
     });
 
-    document.querySelector('body').appendChild(parent);
+    tree.siblings.forEach(function (sibling) {
+        showTree(sibling, node);
+    });
+
+    if (undefined === parent) {
+      setTimeout(function () { 
+        document.querySelector('body').appendChild(node);
+      });
+    } else {
+      parent.appendChild(node);
+    } 
+
   }
+
   </script>
 
   <script type="text/javascript" src="lib/Relative.js"></script>
 
 
-  <!-- include spec files here... -->
+  <script type="text/javascript" src="spec/Relative/index.js"></script>
+
+  <!-- include spec files here... 
+  <script type="text/javascript" src="spec/Relative/getRows.js"></script>
+
   <script type="text/javascript" src="spec/Relative/augmentElements.js"></script>
-  <script type="text/javascript" src="spec/Relative/detectComposedElements.js"></script>
-  <script type="text/javascript" src="spec/Relative/detectIntersectionElements.js"></script>
+
+
   <script type="text/javascript" src="spec/Relative/detectRow.js"></script>
   <script type="text/javascript" src="spec/Relative/getBoundries.js"></script>
-  <script type="text/javascript" src="spec/Relative/getComposedElement.js"></script>
+
   <script type="text/javascript" src="spec/Relative/getTopElementIndex.js"></script>
   <script type="text/javascript" src="spec/Relative/isValidBoundries.js"></script>
-  <script type="text/javascript" src="spec/Relative/getRows.js"></script>
+  <script type="text/javascript" src="spec/Relative/detectComposedElements.js"></script>
+
   <script type="text/javascript" src="spec/Relative/processElements.js"></script>
+
+  <script type="text/javascript" src="spec/Relative/getComposedElement.js"></script>
+    <script type="text/javascript" src="spec/Relative/detectIntersectionElements.js"></script>
+  -->
 
 </head>
 

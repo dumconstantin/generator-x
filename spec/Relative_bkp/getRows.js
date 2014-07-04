@@ -45,8 +45,7 @@ describe('getRows', function () {
 
     it('should get the correct number of rows from an evenly organised structure', function () {
         var elements = createGrid(3, 5),
-            boundries = getBoundries(elements),
-            rows = getRows(boundries, augmentElements(elements));
+            rows = getRows(augmentElements(elements));
 
         expect(rows.length).toBe(3);
     });
@@ -54,7 +53,9 @@ describe('getRows', function () {
     it('should parse correctly complex layout 1', function () {
         var elements,
             boundries,
-            rows;
+            rows,
+            composed,
+            composedRowsIds = [];
 
         elements = [
             {
@@ -104,19 +105,40 @@ describe('getRows', function () {
 
         augmentElements(elements);
 
-        boundries = getBoundries(elements);
+        rows = getRows(augmentElements(elements));
 
-        rows = getRows(boundries, augmentElements(elements));
+        expect(rows.length).toBe(1);
+        expect(rows[0].children.length).toBe(7);
 
-        expect(rows[0].children.length).toBe(2);
-        expect(rows[0].children[1].children.length).toBe(3);
+        rows[0].children.every(function (element) {
+            if (undefined !== element.composed) {
+                composed = element.composed;
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        expect(composed.children.length).toBe(6);
+
+        composed.children.forEach(function (element) {
+            if (-1 === composedRowsIds.indexOf(element.row.id)) {
+                composedRowsIds.push(element.row.id);
+            }
+        });
+
+        expect(composedRowsIds.length).toBe(3);
+
     });
 
-        it('should parse correctly complex layout 2', function () {
+
+      it('should parse correctly complex layout 2', function () {
         var elements,
             ids = {},
             structure,
             boundries,
+            composed,
+            composedRowsIds = [],
             rows;
 
         elements = [
@@ -182,23 +204,30 @@ describe('getRows', function () {
 
         augmentElements(elements);
 
-        boundries = getBoundries(elements);
+        rows = getRows(augmentElements(elements));
+        console.log(rows);
+        expect(rows.length).toBe(1);
+        expect(rows[0].children.length).toBe(9);
 
-        rows = getRows(boundries, augmentElements(elements));
-        structure = getStructure(rows);
+        rows[0].children.every(function (element) {
+            if (undefined !== element.composed) {
+                composed = element.composed;
+                return false;
+            } else {
+                return true;
+            }
+        });
 
-        [5, 8, 10].forEach(function (id) {
-            ids[id] = getElement(structure, id, 1);
-        })
+        expect(composed.children.length).toBe(8);
 
-        expect(ids[10].level).toBe(4);
-        expect(ids[10].siblings.length).toBe(1);
+        composed.children.forEach(function (element) {
+            if (-1 === composedRowsIds.indexOf(element.row.id)) {
+                composedRowsIds.push(element.row.id);
+            }
+        });
 
-        expect(ids[8].level).toBe(7);
-        expect(ids[8].siblings.length).toBe(2);
+        expect(composedRowsIds.length).toBe(3);
 
-        expect(ids[5].level).toBe(4);
-        expect(ids[5].siblings.length).toBe(2);
 
     });
 

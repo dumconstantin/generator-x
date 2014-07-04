@@ -5,7 +5,7 @@ describe('detectRow', function () {
             row;
 
         elements = augmentElements(elements);
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(2);
     });
@@ -17,7 +17,7 @@ describe('detectRow', function () {
         elements[0].top -= elements[0].height / 2 - 1;
         elements = augmentElements(elements);
 
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(2);
     });
@@ -29,7 +29,7 @@ describe('detectRow', function () {
         elements[0].top -= elements[0].height / 2;
 
         elements = augmentElements(elements);
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(2);
     });
@@ -42,7 +42,7 @@ describe('detectRow', function () {
         elements[0].top -= elements[0].height / 2 + 10;
 
         elements = augmentElements(elements);
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(1);
     });
@@ -56,7 +56,7 @@ describe('detectRow', function () {
         elements[3].top += elements[3].height;
 
         elements = augmentElements(elements);
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(4);
     });
@@ -70,7 +70,7 @@ describe('detectRow', function () {
         elements[0].top += elements[0].height / 2;
 
         elements = augmentElements(elements);
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(4);
     });
@@ -84,7 +84,7 @@ describe('detectRow', function () {
         elements[3].top += elements[3].height + 1;
 
         elements = augmentElements(elements);
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(3);
     });
@@ -99,7 +99,7 @@ describe('detectRow', function () {
         elements[3].left = elements[0].left;
 
         elements = augmentElements(elements);
-        row = detectRow(getBoundries(elements), elements);
+        row = detectRow({elements: elements});
 
         expect(row.children.length).toBe(4);
     });
@@ -115,12 +115,9 @@ describe('detectRow', function () {
         elements[3].left = elements[0].left;
 
         elements = augmentElements(elements);
-        boundries = getBoundries(elements);
-        row = detectRow(boundries, elements);
+        row = detectRow({elements: elements});
 
-        Object.keys(boundries).forEach(function (prop) {
-            // expect(row[prop]).toBe(boundries[prop]);
-        });
+
 
     });
 

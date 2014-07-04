@@ -71,6 +71,7 @@ describe('getComposedElement', function () {
 
     });
 
+    /*
     it('should move the intersection element as a direct child to the composed element and adjust its boundries', function () {
         var row,
             intersectionElement,
@@ -91,5 +92,6 @@ describe('getComposedElement', function () {
         expect(intersectionElement.top).toBe(60);
         expect(intersectionElement.left).toBe(110);
     });
+    */
 
 });
