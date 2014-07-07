@@ -103,7 +103,8 @@ function stringify(obj, circularProperties) {
   }
 
   function createNodes(config, modifiers) {
-    var layers = [],
+      var i, j, 
+        layers = [],
         top,
         cellDefaults,
         layer,
@@ -196,13 +197,18 @@ function stringify(obj, circularProperties) {
         }
     }
 
+
     return layers;
   }
 
   function showTree(tree, parent) {
     var node = document.createElement('div');
 
-    tree.css.position = 'absolute';
+    if (undefined === parent) {
+      tree.css.position = 'relative';
+    } else {
+      tree.css.position = 'absolute';
+    }
 
     if ('' === tree.css.background) {
         tree.css.background = '#660099';

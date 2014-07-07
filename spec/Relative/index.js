@@ -17,6 +17,7 @@ describe('Relative tests', function () {
 
     });
 
+    /*
    it('should parse tree #1', function () {
         var group,
             result,
@@ -71,23 +72,88 @@ describe('Relative tests', function () {
         resultedTree = result.getTree();
 
         console.log(resultedTree);
-        
-        expect(resultedTree.length).toBe(1);
-        expect(resultedTree[0].columns.length).toBe(2);
-        expect(resultedTree[0].columns[1].rows.length).toBe(2);
-        expect(resultedTree[0].columns[1].rows[0].columns.length).toBe(1);
-        expect(resultedTree[0].columns[1].rows[0].columns[0].rows.length).toBe(3);
 
-        group = resultedTree[0].columns[1].rows[0].columns[0].rows[0].columns;
+        expect(resultedTree.children.length).toBe(1);
+        expect(resultedTree.children[0].children.length).toBe(2);
+        expect(resultedTree.children[0].children[1].children.length).toBe(2);
+        expect(resultedTree.children[0].children[1].children[0].children.length).toBe(1);
+        expect(resultedTree.children[0].children[1].children[0].children[0].children.length).toBe(3);
+
+        group = resultedTree.children[0].children[1].children[0].children[0].children[0].children;
 
 
-        expect(group[0].rows.length).toBe(0);
-        expect(group[1].rows.length).toBe(2);
-        expect(group[2].rows.length).toBe(3);
-        expect(group[3].rows.length).toBe(3);
+        console.log(group);
+        expect(group[0].children.length).toBe(2);
+        expect(group[1].children.length).toBe(3);
+        expect(group[2].children.length).toBe(3);
+        expect(group[3].children.length).toBe(0);
+
+        result.parseTree();
+
 
    });
+*/
+     it('should parse tree #2', function () {
+            var group,
+                result,
+                resultedTree;
 
+
+           addSiblings(tree, createNodes({
+                rows: 2,
+                cols: 2,
+                cell: {
+                    width: 250,
+                    height: 200,
+                    background: '#444'
+                },
+                offset: {
+                    top: 10,
+                    left: 10
+                }
+            },  cell()
+                .set(0, 0, {
+                    height: 410
+                })
+                .set(1, 0, undefined)
+            ));
+
+            addSiblings(tree.siblings[1],  createNodes({
+                rows: 5,
+                cols: 4,
+                cell: {
+                    width: 50,
+                    height: 25,
+                    background: '#999'
+                },
+                offset: {
+                    top: 10,
+                    left: 10
+                }
+            },  cell()
+                .set(0, 0, { height: 60 })
+                .set(0, 3, { height: 95 })
+                .set(1, 0, undefined)
+                .set(1, 3, undefined)
+                .set(2, 3, undefined)
+                .set(3, 3, undefined)
+                .set(4, 0, undefined)
+            ));
+
+            result = new Relative(tree);
+
+            showTree(tree);
+
+            result.generate();
+
+            resultedTree = result.getTree();
+
+            result.parseTree();
+
+            console.log(tree);
+
+
+       });
 
 
 });
