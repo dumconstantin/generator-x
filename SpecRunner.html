@@ -22,7 +22,34 @@
           return inc;
       };
   }());
-  
+
+function stringify(obj, circularProperties) {
+    var stringified,
+        circularProperties = circularProperties ? circularProperties : [];
+
+    function removeCircular(name, value) {
+        if (-1 === circularProperties.indexOf(name)) {
+            return value;
+        } else {
+            //Undefined properties will be removed from JSON.
+            return undefined;
+        }
+    }
+
+    try {
+        if (0 === circularProperties.length) {
+            stringified = JSON.stringify(obj, null, 4);
+        } else {
+            stringified = JSON.stringify(obj, removeCircular, 4);
+        }
+    } catch (e) {
+        console.error('Stringify error:', e);
+        stringified = String(obj);
+    }
+
+    return stringified;
+}
+
   function createLayer(node) {
       var layer;
 
@@ -41,33 +68,26 @@
   }
 
 
+  function cell() {
+    var cell;
 
+    cell = {};
 
-  function CellModifier() {
-    this.modifiers = {};
+    Object.defineProperty(cell, 'set', {
+      value: function (row, col, value) {
+
+        if (undefined === cell[row]) {
+          cell[row] = {};
+        }
+
+        cell[row][col] = value;
+
+        return cell;
+      }
+    });
+
+    return cell;
   }
-
-  CellModifier.prototype.set = function (row, col, value) {
-
-    if (undefined === this.modifiers[row]) {
-      this.modifiers[row] = {};
-    }
-
-    this.modifiers[row][col] = value;
-
-    return this;
-  };
-
-  CellModifier.prototype.get = function () {
-    return this.modifiers;
-  };
-  
-  CellModifier.prototype.reset = function () {
-    this.modifiers = {};
-
-    return this;
-  };
-
 
 
   function addSiblings(layer, nodes) {

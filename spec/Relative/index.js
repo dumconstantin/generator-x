@@ -1,8 +1,7 @@
 describe('Relative tests', function () {
     "use strict";
 
-    var tree,
-        cell;
+    var tree;
 
     beforeEach(function () {
        tree = createLayer({
@@ -16,67 +15,15 @@ describe('Relative tests', function () {
             children: []
         });
 
-       cell = new CellModifier();
     });
 
-    /*
-    addSiblings(tree.siblings[1], createNodes({
-        rows: 2,
-        cols: 3,
-        cell: {
-            width: 10,
-            height: 50,
-            top: 10,
-            left: 10,
-            background: '#888'
-        },
-        offset: {
-            top: 20,
-            left: 20 
-        }
-    }));
-    */
-
-    /*
    it('should parse tree #1', function () {
-        var result;
+        var group,
+            result,
+            resultedTree;
 
-        addSiblings(tree, createNodes({
-            rows: 2,
-            cols: 3,
-            cell: {
-                width: 100,
-                height: 100,
-                background: '#444'
-            }
-        }));
 
-        addSiblings(tree.siblings[1], createNodes({
-            rows: 2,
-            cols: 3,
-            cell: {
-                width: 20,
-                height: 20,
-                background: 'red'
-            }
-        }));
-
-        result = new Relative(tree);
-
-        result.parseTree();
-
-        expect(result.getTree().rows.length).toBe(2);
-        expect(result.getTree().rows[0].columns.length).toBe(3);
-        expect(result.getTree().rows.length).toBe(2);
-   });
-   */
-
-   it('should parse tree #2', function () {
-        var result;
-
-       ;
-
-        addSiblings(tree, createNodes({
+       addSiblings(tree, createNodes({
             rows: 2,
             cols: 2,
             cell: {
@@ -88,15 +35,12 @@ describe('Relative tests', function () {
                 top: 10,
                 left: 10
             }
-        },  cell
+        },  cell()
             .set(0, 0, {
                 height: 410
             })
             .set(1, 0, undefined)
-            .get()
         ));
-
-        cell.reset();
 
         addSiblings(tree.siblings[1],  createNodes({
             rows: 5,
@@ -110,7 +54,7 @@ describe('Relative tests', function () {
                 top: 10,
                 left: 10
             }
-        },  cell
+        },  cell()
             .set(0, 0, { height: 60 })
             .set(0, 3, { height: 95 })
             .set(1, 0, undefined)
@@ -118,16 +62,30 @@ describe('Relative tests', function () {
             .set(2, 3, undefined)
             .set(3, 3, undefined)
             .set(4, 0, undefined)
-            .get()
         ));
-
-
 
         result = new Relative(tree);
 
-        result.parseTree();
+        result.generate();
 
-        console.log(result.getTree());
+        resultedTree = result.getTree();
+
+        console.log(resultedTree);
+        
+        expect(resultedTree.length).toBe(1);
+        expect(resultedTree[0].columns.length).toBe(2);
+        expect(resultedTree[0].columns[1].rows.length).toBe(2);
+        expect(resultedTree[0].columns[1].rows[0].columns.length).toBe(1);
+        expect(resultedTree[0].columns[1].rows[0].columns[0].rows.length).toBe(3);
+
+        group = resultedTree[0].columns[1].rows[0].columns[0].rows[0].columns;
+
+
+        expect(group[0].rows.length).toBe(0);
+        expect(group[1].rows.length).toBe(2);
+        expect(group[2].rows.length).toBe(3);
+        expect(group[3].rows.length).toBe(3);
+
    });
 
 
