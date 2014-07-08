@@ -204,14 +204,24 @@ function stringify(obj, circularProperties) {
   function showTree(tree, parent) {
     var node = document.createElement('div');
 
-    if (undefined === parent) {
-      tree.css.position = 'relative';
-    } else {
-      tree.css.position = 'absolute';
+    if (undefined === tree.css.position) {
+
+      if (undefined === parent) {
+        tree.css.position = 'relative';
+      } else {
+        tree.css.position = 'absolute';
+      }
+
     }
 
     if ('' === tree.css.background) {
         tree.css.background = '#660099';
+    }
+
+    if (undefined !== tree.attributes) {
+      Object.keys(tree.attributes).forEach(function (attr) {
+        node.setAttribute(attr, tree.attributes[attr]);
+      });
     }
 
     Object.keys(tree.css).forEach(function (prop) {

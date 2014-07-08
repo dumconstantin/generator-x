@@ -127,8 +127,8 @@ describe('Relative tests', function () {
                     background: '#999'
                 },
                 offset: {
-                    top: 10,
-                    left: 10
+                    top: tree.siblings[1].css.top,
+                    left: tree.siblings[1].css.left
                 }
             },  cell()
                 .set(0, 0, { height: 60 })
@@ -142,14 +142,13 @@ describe('Relative tests', function () {
 
             result = new Relative(tree);
 
-            showTree(tree);
-
             result.generate();
 
             resultedTree = result.getTree();
 
             result.parseTree();
 
+            showTree(tree);
             console.log(tree);
 
 
