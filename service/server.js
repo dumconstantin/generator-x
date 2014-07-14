@@ -1,6 +1,6 @@
 var http = require('http');
 var fs = require('fs'),
-    index = fs.readFileSync('index.html'),
+    index = fs.readFileSync('index.html', 'utf8'),
     url = require("url"),
     process = require('child_process');
 
@@ -69,6 +69,7 @@ http.createServer(function (req, res) {
 
     } else {
         res.writeHead(200, {'Content-Type': "text/html"});
+        index = index.replace('[ipaddress]', req.connection.remoteAddress);
         res.end(index); 
     }
 
