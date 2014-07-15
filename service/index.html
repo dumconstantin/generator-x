@@ -80,6 +80,22 @@ font-family: 'MavenPro-Regular';
 font-weight: normal;
 font-style: normal;
 }
+.failed {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 500px;
+    margin-left: -250px;
+    margin-top: -100px;
+    text-align: center;
+    font-family: 'MavenProRegular';
+}
+
+.failed h2 {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
 .spinner {
   top: 50%;
   left: 50%;
@@ -161,8 +177,8 @@ font-style: normal;
             
             function handleResponse(response) {
 
-                if (false !== response.finished) {
-                    
+                if (false !== response.finished && true !== response.failed) {
+
                     var url = 'http://generator.dev.brandup.ro/'
                             + 'generator/test/plugins/generatorx/projects/'
                             + response.projectName + '/',
@@ -172,7 +188,13 @@ font-style: normal;
                     document.location.href = file;
                 }
 
-
+                if (true === response.failed) {
+                    spinner.innerHTML = 
+                        '<h2>Generation Failed</h2>' +
+                        '<p>Launch Photoshop CC 14.1+ and go to Preferences > Plug-Ins > Enable Generator & Enable Remote Connections</p>';
+                    spinner.setAttribute('class', 'failed');
+                    clearInterval(interval);
+                }
             }
             
             httpRequest.onload = receiveResponse;
@@ -185,7 +207,7 @@ font-style: normal;
     </script>
 
 
-<div class="spinner">
+<div id="spinner" class="spinner">
   <div class="cube1"></div>
   <div class="cube2"></div>
 </div>
