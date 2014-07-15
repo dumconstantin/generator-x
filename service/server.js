@@ -2,7 +2,16 @@ var http = require('http');
 var fs = require('fs'),
     index = fs.readFileSync('index.html', 'utf8'),
     url = require("url"),
-    process = require('child_process');
+    childProcess = require('child_process'),
+    path = require("path");
+
+var mimeTypes = {
+    "html": "text/html",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/png",
+    "js": "text/javascript",
+    "css": "text/css"};
 
 function splitter(data){
     var regExp = /name=\"([a-z]+)\"([a-z0-9\.]+)/gi,
@@ -20,14 +29,14 @@ function splitter(data){
 }
 
 
-function generate(ip, password, res) {
+function generate(ip, password, callback) {
 
-    process.exec('pwd', function (err, out) {
+    childProcess.exec('pwd', function (err, out) {
         var path = out
             .replace('test/plugins/generatorx/service', '')
             .replace(/[\n\s\r]/g, '');
 
-        var child = process.fork('app.js' , 
+        var child = childProcess.fork('app.js' , 
             ['-f', 'test/plugins', '-h', ip, '-P', password, '-p', 49494], 
             {
                 cwd: path
@@ -46,31 +55,62 @@ function generate(ip, password, res) {
         child.on('message', function (message) {
             console.log('The generator has finished. Sending response to user.');
             console.log(message);
-            res.end(JSON.stringify(message));
+            callback(JSON.stringify(message));
         });
     });
 
 }
 
+var finishedQueue = {};
+
+
 http.createServer(function (req, res) {
     var query = url.parse(req.url, true),
         data = '';
 
+    var uri = url.parse(req.url).pathname
+    , filename = path.join(process.cwd(), uri);
+  
+
+
     if (req.method == 'POST') {
 
-        req.on('data', function (chunk) {
-            data += chunk;
-        });
-
-        req.on('end', function () {
-            var params = splitter(data);
-            generate(params.ip, params.pass, res);
-        });
+        if (undefined === finishedQueue[req.connection.remoteAddress]) {
+            res.end('{"finished": false}');
+        } else {
+            res.end(finishedQueue[req.connection.remoteAddress]);
+        }
 
     } else {
-        res.writeHead(200, {'Content-Type': "text/html"});
-        index = index.replace('[ipaddress]', req.connection.remoteAddress);
-        res.end(index); 
+
+          path.exists(filename, function(exists) {
+            if(!exists) {
+            res.writeHead(200, {'Content-Type': "text/html"});
+            res.end(index);
+
+            generate(req.connection.remoteAddress, 'password', function (response) {
+                finishedQueue[req.connection.remoteAddress] = response;
+            });
+              return;
+            }
+         
+            if (fs.statSync(filename).isDirectory()) filename += '/index.html';
+         
+            fs.readFile(filename, "binary", function(err, file) {
+              if(err) {        
+                res.writeHead(500, {"Content-Type": "text/plain"});
+                res.write(err + "\n");
+                res.end();
+                return;
+              }
+         
+              res.writeHead(200);
+              res.write(file, "binary");
+              res.end();
+            });
+          });
     }
 
-}).listen(9615);
+}).listen(9616);
+
+
