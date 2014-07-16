@@ -83,10 +83,11 @@ http.createServer(function (req, res) {
 
     } else {
 
-          path.exists(filename, function(exists) {
+          fs.exists(filename, function(exists) {
             if(!exists) {
             res.writeHead(200, {'Content-Type': "text/html"});
             res.end(index);
+
 
             generate(req.connection.remoteAddress, 'password', function (response) {
                 finishedQueue[req.connection.remoteAddress] = response;
@@ -112,5 +113,3 @@ http.createServer(function (req, res) {
     }
 
 }).listen(9616);
-
-
