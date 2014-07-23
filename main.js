@@ -95,8 +95,6 @@
 
             structure
                 .refreshImageBoundries()
-                .refreshParentBoundries()
-                .parseUiConventions()
                 .saveStructureToJSON()
                 .refreshCode()
                 .generateLogicStructure()
