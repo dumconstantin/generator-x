@@ -33,7 +33,7 @@ It automates the slicing of PSDs, it exports text and fonts, it recreates styles
 //  this.optimisePositioning();
 
 ### Mission
-Imagine materializing your intention in a heartbeat. You think of a solution, you describe your solution in a design and its done.
+Imagine materializing your intention in a heartbeat. You think of a solution, you describe your solution visually and its done.
 The instant manifestation of intent through a system that understands the medium in which you solve problems.
 
 Websites, e-shops, web apps, social networks are the bricks of today's humanity. What if we could reverse engineer everything?
