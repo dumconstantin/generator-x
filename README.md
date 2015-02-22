@@ -36,7 +36,7 @@ We need to work less, live more and allow technology to fulfill its mission of e
 ### Is it difficult to use?
 No, there are no steps to actually use it. Included in the Repository there is a server and listens to Photoshop. Once you enable the Photoshop Generator you are good to go.
 
-### What's the benefit in using it?
+### What's the benefit of using it?
 Presentation websites and simple applications can be done in a day rather than weeks. 
 
 More complex websites and applications will be developed in quarter of the time and effort otherwise required.
