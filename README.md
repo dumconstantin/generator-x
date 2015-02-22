@@ -1,5 +1,7 @@
 ## Generator X - End to End Web Development Automation system integrated with Photoshop
 
+[![ScreenShot](http://img.youtube.com/vi/btJeeyiAXfU/0.jpg)](http://youtu.be/btJeeyiAXfU)
+
 ### Setup
 
 1. Clone and setup https://github.com/adobe-photoshop/generator-core (Follow all the setup instructions and don't forget to use Photoshop CC with Generator Enabled).
