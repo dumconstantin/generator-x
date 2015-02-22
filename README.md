@@ -15,9 +15,9 @@ node app.js -f ../generator-x
 *Note*: Also set Photoshop Units to PX instead of Points.
 
 ### What it is
-Generator X is a plugin/service that understands a Photoshop PSD and writes the code necessary to put that design online. 
+Generator X is a NodeJS plugin/service for Adobe Generator Core that understands a Photoshop PSD and writes the code necessary to put that design online. 
 
-It automates the slicing of PSDs, it exports text and fonts, it recreates styles and effects in CSS3 and aligns everything to match the PSD file but using relative positioning. Oh, and pending it integrates with Wordpress and Symphony. It's really something :) Also, it's just begging for an automated deployment to live system.
+It automates the slicing of PSDs, it exports text and fonts, it recreates styles and effects in CSS3 and aligns everything to match the PSD file using absolute and relative positioning. Pending integrations with with Wordpress and Symphony. It's really something :) Also, it's just begging for an automated deployment to live system to get from Photoshop to Live visitors in an instant.
 
 ### Features
 * Full layer HTML structure export
