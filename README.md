@@ -1,6 +1,8 @@
 ## Generator X - End to End Web Development Automation system integrated with Photoshop
 
-[![ScreenShot](http://img.youtube.com/vi/btJeeyiAXfU/0.jpg)](http://youtu.be/btJeeyiAXfU)
+[![ScreenShot](https://raw.githubusercontent.com/BrandUPInteractive/generator-x/master/screencast.jpg)](http://youtu.be/btJeeyiAXfU)
+
+#### NOTE: In development, not suitable for production.
 
 ### Setup
 
@@ -9,6 +11,8 @@
 3. Run in terminal (you'll need to have a PSD opened):
 node app.js -f ../generator-x
 4. Go to *generator-x/projects* and find the generated PSD there.
+
+*Note*: Also set Photoshop Units to PX instead of Points.
 
 ### What it is
 Generator X is a plugin/service that understands a Photoshop PSD and writes the code necessary to put that design online. 
