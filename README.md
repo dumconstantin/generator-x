@@ -1,6 +1,6 @@
 ## Generator X - End to End Web Development Automation system integrated with Photoshop
 
-[![ScreenShot](https://raw.githubusercontent.com/BrandUPInteractive/generator-x/master/screencast.jpg)](http://youtu.be/btJeeyiAXfU)
+[![ScreenShot](https://raw.githubusercontent.com/BrandUPInteractive/generator-x/master/screencast.jpg)](http://youtu.be/lksD2a6nSik)
 
 #### NOTE: In development, not suitable for production.
 
