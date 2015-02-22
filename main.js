@@ -1,7 +1,6 @@
 /** ----------------------------------
  * GeneratorX
  * @author Constantin Dumitrescu
- * @author Bogdan Matei
  * @company Brandup
  * @version 0.1.0
  * -----------------------------------
