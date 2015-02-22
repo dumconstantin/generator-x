@@ -9,9 +9,8 @@
   },
   "dependencies": {
     "archiver": "0.10.x",
-    "image-size": "0.2.x",
     "pngjs": "0.4.x",
-    "slash": "^1.0.0"
+    "image-size": "0.2.x"
   },
   "author": "Constantin Dumitrescu",
   "license": "MIT"
