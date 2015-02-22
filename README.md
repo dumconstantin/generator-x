@@ -14,12 +14,17 @@ Generator X is a plugin/service that understands a Photoshop PSD and writes the 
 It automates the slicing of PSDs, it exports text and fonts, it recreates styles and effects in CSS3 and aligns everything to match the PSD file but using relative positioning. Oh, and pending it integrates with Wordpress and Symphony. It's really something :) Also, it's just begging for an automated deployment to live system.
 
 ### Features
+* Full layer HTML structure export
 * Fully Automated CSS3 export from PSD with full support for Photoshop layer effects
 * Shapes are exported as vectors
 * Full font styles export and font library
 * Full export of images as background or as img tags
-* Relative positioning algorithm that intelligently calculates proximity, parent-child nesting, HTML element organisation and optimisation
+* Absolute positioning export
+* Relative positioning export algorithm that intelligently calculates proximity, parent-child nesting, HTML element organisation and optimisation hierarchy
 * CMS and Frameworks integration (currently a shy Wordpress integration but expanding to Symphony as well)
+
+*Note*: I didn't have time to finalize bug fixing Relative positioning and this is why you will have to enable it by uncommenting line 367 from Structure.js:
+//  this.optimisePositioning();
 
 ### Mission
 Imagine materializing your intention in a heartbeat. You think of a solution, you describe your solution in a design and its done.
