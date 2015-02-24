@@ -4,6 +4,8 @@
 
 #### NOTE: In development, not suitable for production.
 
+#### Project is being refactored and modularized in branch V0.2
+
 ### Setup
 
 1. Clone and setup https://github.com/adobe-photoshop/generator-core (Follow all the setup instructions and don't forget to use Photoshop CC with Generator Enabled).
