@@ -1,42 +1,44 @@
-(function () {
-	"use strict"
+"use strict"
 
-	var fs = require("fs")
-		, path = require("path")
-		, slash = require("slash")
+var fs = require("fs")
+	, path = require("path")
+	, slash = require("slash")
 
-	// All plurals means an array
+// All plurals means an array
 
-	function getFolderPath(document) {
-		return path.resolve(__dirname, "../", "projects", getProjectName(document))
+function getFolderPath(document) {
+	return path.resolve(__dirname, "../", "generated", getProjectName(document))
+}
+
+function getProjectName(document) {
+	return path.basename(slash(document.file), ".psd")
+}
+
+function saveDocument(document) {
+	fs.writeFileSync(
+		path.resolve(getFolderPath(document), "document.json")
+		, JSON.stringify(document, null, 4)
+	)
+}
+
+function createFolder(folderPath) {
+	try {
+		fs.mkdirSync(folderPath)
+	} catch (error) {
+		if ('EEXIST' !== error.code)
+			throw error
 	}
+}
 
-	function getProjectName(document) {
-		return path.basename(slash(document.file), ".psd")
-	}
+exports.save = function saveProject(document) {
+	createFolder(getFolderPath(document))
+	saveDocument(document)
+	return this
+}
 
-	function saveDocument(document) {
-		fs.writeFileSync(
-			path.resolve(getFolderPath(document), "document.json")
-			, JSON.stringify(document, null, 4)
-		)
-	}
+exports.build = function buildProject(document) {
+	var layers = require("./source/layers.js")
 
-	function createFolder(document) {
-		if (false === fs.existsSync(getFolderPath(document))) {
-			fs.mkdirSync(getFolderPath(document))
-		}
-	}
-
-	exports.save = function saveProject(document) {
-		createFolder(document)
-		saveDocument(document)
-	}
-
-	exports.build = function buildProject(document) {
-		var layers = require("./source/layers.js")
-
-		layers.create(document.layers)
-	}
-
-}())
+	layers.create(document.layers)
+	return this
+}
