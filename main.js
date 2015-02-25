@@ -1,25 +1,22 @@
-(function () {
-    "use strict"
+"use strict"
 
-    function start(document) {
-        var project = require("./source/project.js")
+function start(document) {
+    var project = require("./source/project.js")
 
-        document.freeze();
+    Object.freeze(document)
 
-        project.create(document)
-        project.build(document)
-        
-    }
+    project
+        .save(document)
+        .build(document)
+}
 
-    function error(error) {
-        console.error(err)
-    }
+function error(error) {
+    console.error(err)
+}
 
-    exports.init = function init(generator) {
-        generator
-            .getDocumentInfo()
-            .then(start, error)
-            .done()
-    }
-
-}())
+exports.init = function init(generator) {
+    generator
+        .getDocumentInfo()
+        .then(start, error)
+        .done()
+}
