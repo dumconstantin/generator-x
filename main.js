@@ -1,13 +1,8 @@
-"use strict"
+'use strict'
 
 function start(document) {
-    var project = require("./source/project.js")
-
     Object.freeze(document)
-
-    project
-        .save(document)
-        .build(document)
+    require('./source/project.js')(document)
 }
 
 function error(error) {
