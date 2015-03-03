@@ -1,6 +1,7 @@
 'use strict'
 
-
+// Creates a layer object used to generate HTML and CSS based on 
+// the linked PSD layer
 function makeLayer(layer) {
 	return {
 		link: layer.id
@@ -19,11 +20,9 @@ function makeLayer(layer) {
 	}
 }
 
-function makeTree(layers) {
+module.exports = function makeTree(layers) {
 	return layers.map(function (layer) {
 		return makeLayer(layer)
 	}, [])
 }
-
-module.exports = makeTree
 
