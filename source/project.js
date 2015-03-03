@@ -12,7 +12,7 @@ function getProjectName(document) {
 	return path.basename(slash(document.file), '.psd')
 }
 
-module.exports = function (document) {
+module.exports = function createProject(document) {
 	var save = require('./save.js') 
 
 	save.json(path.resolve(getFolderPath(document), 'source', 'document.json'), document)
