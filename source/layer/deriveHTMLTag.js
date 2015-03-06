@@ -71,6 +71,8 @@
     }
 */
 
-module.exports = function deriveHTMLTag(layer) {
+function deriveHTMLTag(layer) {
     return ''
 }
+
+module.exports = deriveHTMLTag

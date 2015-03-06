@@ -12,6 +12,8 @@ function createLayer(documentLayer) {
 	}
 }
 
-exports.create = function createLayers(documentLayers) {
+function createLayers(documentLayers) {
 	return (true === documentLayers instanceof Array) ? documentLayers.map(createLayer) : []
 }
+
+exports.create = createLayers

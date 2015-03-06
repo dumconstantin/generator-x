@@ -1,5 +1,6 @@
 'use strict'
 
+
 // Creates a layer object used to generate HTML and CSS based on 
 // the linked PSD layer
 function makeLayer(layer) {
@@ -17,12 +18,14 @@ function makeLayer(layer) {
 		, beforeElement: {}
 		, semantics: {}
 		, styles: require('./layer/deriveStyles.js')(layer)
+		, image: require('./layer/needsImage.js')(layer) ? require('./layer/createImage.js')(layer) : ''
 	}
 }
 
-module.exports = function makeTree(layers) {
+function makeTree(layers) {
 	return layers.map(function (layer) {
 		return makeLayer(layer)
 	}, [])
 }
 
+module.exports = makeTree

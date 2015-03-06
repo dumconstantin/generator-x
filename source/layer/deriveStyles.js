@@ -44,7 +44,7 @@ function deriveFontStyle(layer) {
     return {}
 }
 
-module.exports = function deriveStyles(layer) {
+function deriveStyles(layer) {
     return {
         background: deriveBackgroundStyle(layer)
         , dimensions: deriveDimensionsStyle(layer)
@@ -55,3 +55,5 @@ module.exports = function deriveStyles(layer) {
         , font: deriveFontStyle(layer)
     }
 }
+
+module.exports = deriveStyles
