@@ -16,7 +16,7 @@ function createProject(document) {
 	var save = require('./save.js') 
 
 	save.json(path.resolve(getFolderPath(document), 'source', 'document.json'), document)
-	save.json(path.resolve(getFolderPath(document), 'source', 'tree.json'), require('./makeTree.js')(document.layers))
+	save.json(path.resolve(getFolderPath(document), 'source', 'tree.json'), require('./makeTree.js')(document))
 }
 
 module.exports = createProject

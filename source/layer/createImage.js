@@ -1,11 +1,25 @@
 'use strict'
 
+
+
+  
 function createImage(layer) {
-	var imageName = require('node-uuid').v1()
+  var imageName = require('node-uuid').v1()
 
+  require('generator-core')(function (generator) {
+    generator.getPixmap(layer.documentId, imageName, {}).then(
+            function(pixmap){
+
+                _this.saveImage(pixmap);
+
+            },
+            function(err){
+                console.error("Pixmap error:", err);
+            }
+        ).done();  
+  })
     
-
-	return imageName + '.png'
+  return imageName + '.png'
 }
 
 module.exports = createImage
