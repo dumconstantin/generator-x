@@ -15,4 +15,3 @@ require('generator-core')(function (generator) {
     .then(start, error)
     .done()
 })
-
