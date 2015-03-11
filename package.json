@@ -14,8 +14,6 @@
     "pngjs": "0.4.x",
     "slash": "^1.0.0",
     "tmp": "0.0.25"
-    "pngjs": "0.4.x",
-    "image-size": "0.2.x"
   },
   "author": "Constantin Dumitrescu",
   "license": "MIT"
