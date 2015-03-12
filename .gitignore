@@ -1,6 +1,9 @@
 .idea
 projects/
 node_modules/
-.swp
+*.swp
+*.swo
+*~
+generated/
 .DS_Store
 Thumbs.db
