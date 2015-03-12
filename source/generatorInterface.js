@@ -2,7 +2,7 @@
 var when = require('when')
 
 function generatorPromise() {
-    var generator = require('../node_modules/generator-core/lib/generator.js').createGenerator() 
+    var generator = require(require('path').resolve(__dirname, '../node_modules/generator-core/lib/generator.js')).createGenerator() 
 
     generator.start({
         port: 49494
