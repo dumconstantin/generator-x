@@ -1,19 +1,29 @@
-"use strict"
+'use strict'
 
-function getStyles(documentLayer) {
-	
-}
-
-function createLayer(documentLayer) {
+// Creates a layer object used to generate HTML and CSS based on 
+// the linked PSD layer
+var makeLayer = R.curry(function makeLayer(document, layer) {
 	return {
-		documentLayer: documentLayer
-		, children: getLayers(documentLayer)
-		, styles: getStyles(documentLayer)
+        documentId: document.id
+		, layerId: layer.id
+		, layers: layer.layers.map(makeLayer(document))
+		, id: require('node-uuid').v1()
+		, text: require('./layer/deriveText.js')(document, layer)
+		, HTMLAttributes: {
+			classes: ''
+			, id: ''
+		}
+		, HTMLTag: ''
+		, afterElement: {}
+		, beforeElement: {}
+		, semantics: {}
+		, styles: require('./layer/deriveStyles.js')(document, layer)
+		, image: require('./layer/needsImage.js')(document, layer) ? require('./layer/createImage.js')(document, layer) : ''
 	}
+})
+
+function layers(document) {
+    return document.layers.map(makeLayer(document))    
 }
 
-function createLayers(documentLayers) {
-	return (true === documentLayers instanceof Array) ? documentLayers.map(createLayer) : []
-}
-
-exports.create = createLayers
+module.exports = layers 
