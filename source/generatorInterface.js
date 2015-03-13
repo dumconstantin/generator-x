@@ -1,7 +1,7 @@
 'use strict'
 var when = require('when')
 
-function generatorPromise() {
+function generator() {
     var generator = require(require('path').resolve(__dirname, '../node_modules/generator-core/lib/generator.js')).createGenerator() 
 
     generator.start({
@@ -14,7 +14,7 @@ function generatorPromise() {
 }
 
 function documentPromise() {
-    return generatorPromise().getDocumentInfo()
+    return generator().getDocumentInfo()
 }
 
 module.exports = {
