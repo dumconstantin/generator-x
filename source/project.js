@@ -30,7 +30,7 @@ var save = R.curry(function save(document, folder, file, data) {
 
 function project(document) {
     save(document, 'source', 'document.json', document) 
-    return save(document, 'source', 'project.json', makeProject(project))
+    return save(document, 'source', 'project.json', makeProject(document))
 }
 
 module.exports = project
