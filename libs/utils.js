@@ -2,40 +2,25 @@
 
 var R = require('ramda')
 
-// TODO: Refactor getPropertyMonad to use recursive property access 
-// instead of eval
-function getProperty(obj) {
-	return function (propertyChain, defaultValue) {
-		var value;
-		
-		if ('function' !== typeof propertyChain && 'string' === typeof propertyChain) {
+var getProp = R.curry(function (props, defaultValue, obj) {
+    return R.defaultTo(defaultValue 
+        , R.reduce(R.ifElse(R.is(Object)
+                , R.flip(R.prop)
+                , R.always(undefined)
+                )
+            , obj
+            , R.split('.', props)
+            )
+        )
+})
 
-			try {
-				eval('value = obj.' + propertyChain.toString());
-				if (undefined === value) {
-					throw new Error('not available');
-				}
-			} catch (e) {
-				if (undefined !== defaultValue) {
-					return defaultValue;
-				}
-				return undefined;
-			}
-		} else {
-			return null;
-		}
-
-		return value;
-	}
-}
-
-var setProperty = R.curry(function setProperty(propName, propValue, obj) {
+var setProp = R.curry(function setProperty(propName, propValue, obj) {
     var clonedObject = R.clone(obj)   
     clonedObject[propName] = propValue
     return clonedObject
 })
 
 module.exports = {
-	getProp: getProperty
-    , setProp: setProperty
+	getProp: getProp 
+    , setProp: setProp
 }
