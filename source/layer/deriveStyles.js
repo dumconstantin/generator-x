@@ -1,14 +1,14 @@
 'use strict'
-var monads = require('../../libs/monads.js')
+var R = require('ramda') 
+    , U = require('../../libs/utils.js')
 
 function deriveBackgroundStyle(layer) {
     var style = {}
-        , get = monads.getProperty(layer)
-
+        
     style.color = {
-        red: get('fill.color.red', 255)
-        , green: get('fill.color.green', 255)
-        , blue: get('fill.color.blue', 255)
+        red: U.getProp('fill.color.red', 255, layer)
+        , green: U.getProp('fill.color.green', 255)
+        , blue: U.getProp('fill.color.blue', 255)
     }
 
     return style
