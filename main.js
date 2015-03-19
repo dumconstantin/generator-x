@@ -5,4 +5,4 @@ function start(document) {
   require('./source/project.js')(Object.freeze(document))
 }
 
-require('./source/generatorInterface.js').getDocumentPromise().done(start)
+require('./source/generatorInterface.js').documentP().done(start)
