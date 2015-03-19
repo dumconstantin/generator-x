@@ -2,7 +2,7 @@
 
 var R = require('ramda')
 
-var getProp = R.curry(function (props, defaultValue, obj) {
+var getProp = R.curry(function (defaultValue, props, obj) {
     return R.defaultTo(defaultValue 
         , R.reduce(R.ifElse(R.is(Object)
                 , R.flip(R.prop)
@@ -20,7 +20,12 @@ var setProp = R.curry(function setProperty(propName, propValue, obj) {
     return clonedObject
 })
 
+var argumentsToArray = function () {
+    return Array.prototype.slice.call(arguments)
+}
+
 module.exports = {
 	getProp: getProp 
     , setProp: setProp
+    , argumentsToArray: argumentsToArray
 }
