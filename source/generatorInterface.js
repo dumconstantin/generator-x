@@ -13,10 +13,15 @@ function generator() {
     return generator
 }
 
-function documentPromise() {
+function documentP() {
     return generator().getDocumentInfo()
 }
 
+function pixmapP(documentId, layerId) {
+  return generator().getPixmap(documentId, layerId, {})
+}
+
 module.exports = {
-    getDocumentPromise: documentPromise
+    documentP: documentP
+    , pixmapP: pixmapP
 }
