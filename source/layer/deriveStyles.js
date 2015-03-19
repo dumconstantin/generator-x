@@ -6,9 +6,9 @@ function deriveBackgroundStyle(layer) {
     var style = {}
         
     style.color = {
-        red: U.getProp('fill.color.red', 255, layer)
-        , green: U.getProp('fill.color.green', 255)
-        , blue: U.getProp('fill.color.blue', 255)
+        red: U.getProp(255, 'fill.color.red', layer)
+        , green: U.getProp(255, 'fill.color.green', layer)
+        , blue: U.getProp(255, 'fill.color.blue', layer)
     }
 
     return style
