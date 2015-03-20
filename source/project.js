@@ -33,5 +33,8 @@ function project(document) {
     return save(document, 'source', 'project.json', makeProject(document))
 }
 
-module.exports = project
+module.exports = { 
+    make: project
+    , path: getProjectPath
+}
 
