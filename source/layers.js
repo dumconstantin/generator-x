@@ -1,21 +1,21 @@
 'use strict'
 var U = require('../libs/utils.js')
     , R = require('ramda')
-
-var createImageP = R.pipeP(
-    U.argumentsToArray 
-    , R.map(R.prop('id'))
-    , R.apply(require('./generatorInterface.js').pixmapP)
-    , require('./save.js').tempImageP
-)
+    , path = require('path')
 
 // Creates a layer object used to generate HTML and CSS based on 
 // the linked PSD layer
 var makeLayer = R.curry(function (document, layer) {
-   var image = require('./layer/needsImage.js')(document, layer) ? createImageP(document, layer) : ''
-
-    image.done(function () {
-   console.log(arguments) 
+    var fileName = require('node-uuid').v1() 
+        , filePath = path.resolve(require('./project.js').path(document), 'temp',  fileName)
+   
+    var imageP = R.pipeP(
+        require('./generatorInterface.js').pixmapP
+        , require('./save.js').tempImageP(filePath)
+    )(document.id, layer.id)
+    
+    imageP.done(function () {
+        console.log(arguments) 
         console.log('image is done')
     })
     return {
@@ -33,7 +33,7 @@ var makeLayer = R.curry(function (document, layer) {
 		, beforeElement: {}
 		, semantics: {}
 		, styles: require('./layer/deriveStyles.js')(document, layer)
-		, image: image
+		, image: imageP
     }
 })
 
