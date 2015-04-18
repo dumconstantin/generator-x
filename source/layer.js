@@ -29,9 +29,7 @@ var build = R.curry(function buildFunc(document, psdLayer) {
 
 function flatten(layers) {
     return layers.reduce(function(list, layer) {
-        list = list.concat(layer)
-        list = list.concat(flatten(layer.children))
-        return list
+        return list.concat(layer, flatten(layer.children))
     }, [])
 }
 
