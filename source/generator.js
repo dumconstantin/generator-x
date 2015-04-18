@@ -11,7 +11,7 @@ function generator() {
         , hostname: 'localhost'
         , password: '123456'
     })
-    
+
     return generator
 }
 
@@ -20,7 +20,7 @@ function documentP() {
 }
 
 var pixmapP = R.curry(function pixmapPFunc(document, layer) {
-  return generator().getPixmap(document.id, layer.psdId, {})
+    return generator().getPixmap(document.id, layer.psdId, {})
 })
 
 module.exports = {

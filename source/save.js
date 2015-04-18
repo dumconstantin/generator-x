@@ -1,14 +1,14 @@
 'use strict'
 var fs = require('fs')
-  , path = require('path')
-  , mkdirSync = require('node-fs').mkdirSync
-  , PNG = require('pngjs').PNG
-  , when = require('when')
-  , R = require('ramda')
+    , path = require('path')
+    , mkdirSync = require('node-fs').mkdirSync
+    , PNG = require('pngjs').PNG
+    , when = require('when')
+    , R = require('ramda')
 
 function writeFile(filePath, data) {
-  fs.writeFileSync(mkdir(filePath), data)
-  return filePath
+    fs.writeFileSync(mkdir(filePath), data)
+    return filePath
 }
 
 function mkdir(filePath) {
@@ -17,14 +17,14 @@ function mkdir(filePath) {
 }
 
 function saveJSON(filePath, data) {
-  writeFile(filePath, JSON.stringify(data, null, 4))
+    writeFile(filePath, JSON.stringify(data, null, 4))
 }
 
 function saveStream(filePath) {
-  return fs.createWriteStream(mkdir(filePath))
+    return fs.createWriteStream(mkdir(filePath))
 }
 
 module.exports = {
-  json: saveJSON
-  , stream: saveStream
+    json: saveJSON
+    , stream: saveStream
 }
