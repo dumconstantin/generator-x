@@ -9,7 +9,7 @@ GLOBAL.when = require('when')
 GLOBAL.slash = require('slash')
 GLOBAL.PNG = require('pngjs').PNG
 GLOBAL.mkdirSync = require('node-fs').mkdirSync
-GLOBAL.generatorCore = require(path.resolve(__dirname, '../node_modules/generator-core/lib/generator.js'))
+GLOBAL.generatorCore = require('./node_modules/generator-core/lib/generator.js')
 
 
 // Application modules
