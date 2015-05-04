@@ -18,6 +18,7 @@ GLOBAL.save = require('./source/save.js')
 GLOBAL.project = require('./source/project.js')
 GLOBAL.layer = require('./source/layer.js')
 GLOBAL.image = require('./source/image.js')
+GLOBAL.style = require('./source/style.js')
 
 // Libraries
 GLOBAL.U = require('./libs/utils.js')

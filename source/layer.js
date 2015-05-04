@@ -15,7 +15,7 @@ var build = R.curry(function buildFunc(document, psdLayer) {
         , afterElement: {}
         , beforeElement: {}
         , semantics: {}
-        , styles: require('./layer/deriveStyles.js')(document, psdLayer)
+        , styles: style.all(document, psdLayer)
     }
 })
 
