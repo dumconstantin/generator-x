@@ -25,7 +25,7 @@ var argumentsToArray = function () {
 }
 
 module.exports = {
-	getProp: getProp 
+    getProp: getProp 
     , setProp: setProp
     , argumentsToArray: argumentsToArray
 }

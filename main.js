@@ -1,11 +1,5 @@
 'use strict'
-var save = require('./source/save.js')
-    , path = require('path')
-    , project = require('./source/project.js')
-    , layer = require('./source/layer.js')
-    , generator = require('./source/generator.js')
-    , image = require('./source/image.js')
-    , when = require('when')
+require('./globals.js')
 
 // Starts the system using the exported document from Generator Core
 function start(document) {

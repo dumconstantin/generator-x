@@ -1,6 +1,4 @@
 'use strict'
-var R = require('ramda') 
-    , U = require('../../libs/utils.js')
 
 function deriveBackgroundStyle(layer) {
     var style = {}

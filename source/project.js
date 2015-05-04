@@ -1,8 +1,4 @@
 'use strict'
-var fs = require('fs')
-    , path = require('path')
-    , slash = require('slash')
-    , R = require('ramda')
 
 function projectPath(document) {
     return path.resolve(__dirname, '..', 'generated', projectName(document))

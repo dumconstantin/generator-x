@@ -1,10 +1,4 @@
 'use strict'
-var fs = require('fs')
-    , path = require('path')
-    , mkdirSync = require('node-fs').mkdirSync
-    , PNG = require('pngjs').PNG
-    , when = require('when')
-    , R = require('ramda')
 
 function writeFile(filePath, data) {
     fs.writeFileSync(mkdir(filePath), data)

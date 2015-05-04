@@ -1,11 +1,4 @@
 'use strict'
-var layer = require('./layer.js')
-    , generator = require('./generator.js')
-    , PNG = require('pngjs').PNG
-    , when = require('when')
-    , R = require('ramda')
-    , project = require('./project.js')
-    , save = require('./save.js')
 
 var streamPixmap = R.curry(function streamPixmapFunc(stream, pixmap) {
     var png = new PNG({

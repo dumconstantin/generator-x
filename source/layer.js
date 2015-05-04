@@ -1,11 +1,3 @@
-var U = require('../libs/utils.js')
-    , R = require('ramda')
-    , path = require('path')
-    , generator = require('./generator.js')
-    , uniqueId = require('node-uuid').v1
-    , save = require('./save.js')
-    , project = require('./project.js')
-
 // Creates a layer object used to generate HTML and CSS based on
 // the linked PSD layer
 var build = R.curry(function buildFunc(document, psdLayer) {
@@ -13,7 +5,7 @@ var build = R.curry(function buildFunc(document, psdLayer) {
         documentId: document.id
         , psdId: psdLayer.id
         , children: undefined !== psdLayer.layers ? psdLayer.layers.map(build(document)) : []
-        , id: uniqueId()
+        , id: uuid()
         , text: require('./layer/deriveText.js')(document, psdLayer)
         , HTMLAttributes: {
             classes: ''

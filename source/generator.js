@@ -1,7 +1,3 @@
-var when = require('when')
-    , R = require('ramda')
-    , path = require('path')
-    , generatorCore = require(path.resolve(__dirname, '../node_modules/generator-core/lib/generator.js'))
 
 function generator() {
     var generator = generatorCore.createGenerator()
