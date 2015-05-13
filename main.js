@@ -10,7 +10,7 @@ function start(document) {
     save.json(source('layers.json'), layer.all(document))
 
     image
-        .all(document, layer.flatten(document).filter(image.needsImage))
+        .all(document, U.flattenBy('children', layer.all(document)).filter(image.needsImage))
         .done(function () { console.log(arguments) })
 }
 
