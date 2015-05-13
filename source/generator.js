@@ -1,11 +1,10 @@
-
 function generator() {
     var generator = generatorCore.createGenerator()
 
     generator.start({
-        port: 49494
-        , hostname: 'localhost'
-        , password: '123456'
+        port: 49494,
+        hostname: 'localhost',
+        password: '123456'
     })
 
     return generator
@@ -20,6 +19,6 @@ var pixmapP = R.curry(function pixmapPFunc(document, layer) {
 })
 
 module.exports = {
-    documentP: documentP
-    , pixmapP: pixmapP
+    documentP: documentP,
+    pixmapP: pixmapP
 }

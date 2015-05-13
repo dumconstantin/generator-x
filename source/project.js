@@ -13,7 +13,7 @@ var filePath = R.curry(function filePathFunc(document, folder, file) {
 })
 
 module.exports = {
-    path: projectPath
-    , file: filePath
-    , name: projectName
+    path: projectPath,
+    file: filePath,
+    name: projectName
 }

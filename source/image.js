@@ -2,14 +2,12 @@
 
 var savePixmap = R.curry(function streamPixmapFunc(stream, pixmap) {
     var pixmapData = {
-            width: pixmap.width
-            , height: pixmap.height
+            width: pixmap.width,
+            height: pixmap.height
         },
-        png = new PNG(pixmapData)
-        , location
-        , pixel
-        , pixels = pixmap.pixels
-        , promise = when.promise(function(resolve, reject) {
+        png = new PNG(pixmapData),
+        location, pixel, pixels = pixmap.pixels,
+        promise = when.promise(function(resolve, reject) {
             stream.on('close', function() {
                 resolve(pixmapData)
             })
@@ -37,11 +35,11 @@ var savePixmap = R.curry(function streamPixmapFunc(stream, pixmap) {
 
 var imageData = R.curry(function imageDataFunc(document, layer, pixmapData) {
     return {
-        filePath: project.file(document, 'images', layer.psdId + '.png')
-        , documentId: document.id
-        , layerId: layer.id
-        , pixmap: pixmapData
-    } 
+        filePath: project.file(document, 'images', layer.psdId + '.png'),
+        documentId: document.id,
+        layerId: layer.id,
+        pixmap: pixmapData
+    }
 })
 
 var saveImage = R.curry(function buildFunc(document, layer) {
@@ -69,6 +67,6 @@ function all(document, layers) {
 }
 
 module.exports = {
-    all: all
-    , needsImage: needsImage
+    all: all,
+    needsImage: needsImage
 }

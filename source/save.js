@@ -19,6 +19,6 @@ function saveStream(filePath) {
 }
 
 module.exports = {
-    json: saveJSON
-    , stream: saveStream
+    json: saveJSON,
+    stream: saveStream
 }
