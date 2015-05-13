@@ -23,9 +23,15 @@ var setProp = R.curry(function setProperty(propName, propValue, obj) {
 var argumentsToArray = function () {
     return Array.prototype.slice.call(arguments)
 }
+var flattenBy = R.curry(function flattenByFunc(prop, list) {
+    return list.reduce(function(flatList, item) {
+        return flatList.concat(item, flattenBy(prop, item[prop]))
+    }, [])
+})
 
 module.exports = {
     getProp: getProp 
     , setProp: setProp
     , argumentsToArray: argumentsToArray
+    , flattenBy: flattenBy
 }
