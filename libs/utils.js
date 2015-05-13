@@ -29,9 +29,16 @@ var flattenBy = R.curry(function flattenByFunc(prop, list) {
     }, [])
 })
 
+var listCall = R.curry(function listCallFunc(funcList, list) {
+    return funcList.map(function (func, index) {
+        return func(list[index])
+    })
+})
+
 module.exports = {
     getProp: getProp 
     , setProp: setProp
     , argumentsToArray: argumentsToArray
     , flattenBy: flattenBy
+    , listCall: listCall
 }

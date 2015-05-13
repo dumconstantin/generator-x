@@ -11,7 +11,7 @@ function start(document) {
 
     image
         .all(document, U.flattenBy('children', layer.all(document)).filter(image.needsImage))
-        .done(function () { console.log(arguments) })
+        .done(save.json(source('images.json')))
 }
 
 generator.documentP().done(start)

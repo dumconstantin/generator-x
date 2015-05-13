@@ -10,9 +10,9 @@ function mkdir(filePath) {
     return filePath
 }
 
-function saveJSON(filePath, data) {
+var saveJSON = R.curry(function saveJSONFunc(filePath, data) {
     writeFile(filePath, JSON.stringify(data, null, 4))
-}
+})
 
 function saveStream(filePath) {
     return fs.createWriteStream(mkdir(filePath))

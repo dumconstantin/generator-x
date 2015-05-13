@@ -38,7 +38,7 @@ var savePixmap = R.curry(function streamPixmapFunc(stream, pixmap) {
 var imageData = R.curry(function imageDataFunc(document, layer, pixmapData) {
     return {
         filePath: project.file(document, 'images', layer.psdId + '.png')
-        , documentId: document.Id
+        , documentId: document.id
         , layerId: layer.id
         , pixmap: pixmapData
     } 
@@ -49,7 +49,6 @@ var saveImage = R.curry(function buildFunc(document, layer) {
     return generator
         .pixmapP(document, layer)
         .then(savePixmap(save.stream(filePath)))
-        .then(imageData(document, layer))
 })
 
 function optimiseImage(image) {
@@ -63,10 +62,10 @@ function needsImage(layer) {
 }
 
 function all(document, layers) {
+    var imageDataCalled = R.map(imageData(document), layers.map(R.nthArg(0)))
     return when
         .all(layers.map(saveImage(document)))
-        .then(function () { console.log(arguments) })
-        // .then(R.map(layers.map(imageData(document))))
+        .then(U.listCall(imageDataCalled))
 }
 
 module.exports = {
