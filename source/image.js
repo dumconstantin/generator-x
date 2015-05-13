@@ -1,19 +1,19 @@
 'use strict'
 
-var streamPixmap = R.curry(function streamPixmapFunc(stream, pixmap) {
-    var png = new PNG({
+var savePixmap = R.curry(function streamPixmapFunc(stream, pixmap) {
+    var pixmapData = {
             width: pixmap.width
             , height: pixmap.height
-        })
+        },
+        png = new PNG(pixmapData)
         , location
         , pixel
         , pixels = pixmap.pixels
         , promise = when.promise(function(resolve, reject) {
             stream.on('close', function() {
-                resolve(pixmap)
+                resolve(pixmapData)
             })
         })
-
 
     // Convert from ARGB to RGBA, we do this every 4 pixel values (channelCount)
     for (location = 0; location < pixels.length; location += pixmap.channelCount) {
@@ -31,26 +31,25 @@ var streamPixmap = R.curry(function streamPixmapFunc(stream, pixmap) {
     });
 
     png.pack().pipe(stream)
+
     return promise
 })
 
-var buildP = R.curry(function buildFunc(document, layer) {
-    return when.promise(function(resolve, reject, notify) {
-        var filePath = project.file(document, 'images', layer.psdId + '.png')
+var imageData = R.curry(function imageDataFunc(document, layer, pixmapData) {
+    return {
+        filePath: project.file(document, 'images', layer.psdId + '.png')
+        , documentId: document.Id
+        , layerId: layer.id
+        , pixmap: pixmapData
+    } 
+})
 
-        generator.pixmapP(document, layer)
-            .then(streamPixmap(save.stream(filePath)))
-            .then(function(pixmap) {
-                resolve({
-                    file: filePath
-                    , documentId: document.id
-                    , layerId: layer.id
-                    , width: pixmap.width
-                    , height: pixmap.height
-                    , bounds: pixmap.bounds
-                })
-            })
-    })
+var saveImage = R.curry(function buildFunc(document, layer) {
+    var filePath = project.file(document, 'images', layer.psdId + '.png')
+    return generator
+        .pixmapP(document, layer)
+        .then(savePixmap(save.stream(filePath)))
+        .then(imageData(document, layer))
 })
 
 function optimiseImage(image) {
@@ -63,11 +62,14 @@ function needsImage(layer) {
     return true
 }
 
-function allP(document) {
-    return layer.flatten(layer.all(document)).filter(needsImage).map(buildP(document))
+function all(document, layers) {
+    return when
+        .all(layers.map(saveImage(document)))
+        .then(function () { console.log(arguments) })
+        // .then(R.map(layers.map(imageData(document))))
 }
 
 module.exports = {
-    allP: allP
-    , buildP: buildP
+    all: all
+    , needsImage: needsImage
 }
